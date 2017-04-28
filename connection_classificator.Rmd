@@ -1,0 +1,171 @@
+---
+title: "Connection Classification"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(stringr))
+suppressMessages(library(ISLR))
+suppressMessages(library(caret))
+suppressMessages(library(doMC))
+registerDoMC(cores=4)
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+### Getting and proccesing the data
+```{r}
+myData = read.csv('/home/jguerra/datasets/processed/data_all_result.txt', stringsAsFactors = F, sep = ' ')
+
+#Create data backup
+myData.bkup <- myData
+#Create new column: length of model, and number of periodicity, duration and size characteristic in the model.
+myData = myData %>% mutate(letter_count = nchar(State))
+#Periodicity
+myData = myData %>% mutate(strong_p = str_count(State,'[a-i]'))
+myData = myData %>% mutate(weak_p = str_count(State,'[A-I]'))
+myData = myData %>% mutate(weak_np = str_count(State,'[r-z]'))
+myData = myData %>% mutate(strong_np = str_count(State,'[R-Z]'))
+#Duration
+myData = myData %>% mutate(duration_s = str_count(State,'(a|A|r|R|1|d|D|u|U|4|g|G|x|X|7)'))#c('a','A','r','R','1','d','D','u','U','4','g','G','x','X','7')))
+myData = myData %>% mutate(duration_m = str_count(State,'(b|B|s|S|2|e|E|v|V|5|h|H|y|Y|8)'))#c('b','B','s','S','2','e','E','v','V','5','h','H','y','Y','8')))
+myData = myData %>% mutate(duration_l = str_count(State,'(c|C|t|T|3|f|F|w|W|6|i|I|z|Z|9)'))#c('c','C','t','T','3','f','F','w','W','6','i','I','z','Z','9')))
+#Size
+myData = myData %>% mutate(size_s = str_count(State,'[a-c]') + str_count(State,'[A-C]') + str_count(State,'[r-t]') + str_count(State,'[R-T]') + str_count(State,'[1-3]'))
+myData = myData %>% mutate(size_m = str_count(State,'[d-f]') + str_count(State,'[D-F]') + str_count(State,'[u-w]') + str_count(State,'[U-W]') + str_count(State,'[4-6]'))
+myData = myData %>% mutate(size_l = str_count(State,'[g-i]') + str_count(State,'[G-I]') + str_count(State,'[x-z]') + str_count(State,'[X-Z]') + str_count(State,'[7-9]'))
+
+#Remove from LabelName unnecessary characters (ej: V42, -17)
+myData <- myData %>% mutate(LabelName = gsub('V[0-9]+-','',LabelName))
+myData <- myData %>% mutate(LabelName = gsub('-[0-9]+','',LabelName))
+myData <- myData %>% mutate(LabelName = gsub('CC[0-9]+-','CC-',LabelName))
+
+#Keep only connection with more than 3 symbols
+myData <- myData %>% filter(letter_count > 3)
+
+#Periodicity %
+myData <- myData %>% mutate(strong_p = (strong_p / letter_count))
+myData <- myData %>% mutate(weak_p = (weak_p / letter_count))
+myData <- myData %>% mutate(strong_np = (strong_np / letter_count))
+myData <- myData %>% mutate(weak_np = (weak_np / letter_count))
+#Duration %
+myData <- myData %>% mutate(duration_s = (duration_s / letter_count))
+myData <- myData %>% mutate(duration_m = (duration_m / letter_count))
+myData <- myData %>% mutate(duration_l = (duration_l / letter_count))
+#Size %
+myData <- myData %>% mutate(size_s = (size_s / letter_count))
+myData <- myData %>% mutate(size_m = (size_m / letter_count))
+myData <- myData %>% mutate(size_l = (size_l / letter_count))
+
+#head(myData)
+myData[1:20,]
+
+#Making feature vectors
+feature_vectors = myData[,c('strong_p','weak_p','weak_np','strong_np','duration_s','duration_m','duration_l','size_s','size_m','size_l','letter_count','Label','LabelName')]
+names(feature_vectors) = c("sp","wp","wnp","snp","ds","dm","dl","ss","sm","sl","length","class","subclass")
+feature_vectors$class = factor(feature_vectors$class)
+feature_vectors$subclass = factor(feature_vectors$subclass)
+```
+
+### Create training set and testset
+```{r}
+trainIndex <- createDataPartition(feature_vectors$class, p=0.80, list=FALSE)
+data_train <- feature_vectors[ trainIndex,]
+data_test <- feature_vectors[-trainIndex,]
+
+#data_train = data_train %>% filter(length>5)
+train <- upSample(x = data_train,  y = data_train$class, yname="class")
+#train <- upSample(x = train,  y = train$subclass, yname="class")
+training <- train[,-c(11,12,13)]
+testing <- data_test[,-c(11,13)]
+training
+```
+
+
+### Random Forest Classificator
+```{r}
+  
+```
+
+### KNN
+```{r}
+#Checking distibution in origanl data and partitioned data
+prop.table(table(training$class)) * 100
+prop.table(table(testing$class)) * 100
+prop.table(table(feature_vectors$class)) * 100
+
+trainX <- training[,names(training) != "class"]
+preProcValues <- preProcess(x = trainX,method = c("center", "scale"))
+preProcValues
+```
+```{r}
+ctrl_fast <- trainControl(method="cv", 
+                     repeats=1,
+                     number=2, 
+                     summaryFunction=twoClassSummary,
+                     verboseIter=T,
+                     classProbs=TRUE,
+                     allowParallel = TRUE)  
+ctrl <- trainControl(method="repeatedcv",repeats = 3) #,classProbs=TRUE,summaryFunction = twoClassSummary)
+knnFit <- train(class ~ ., data = training, method = "knn", trControl = ctrl_fast, preProcess = c("center","scale"), tuneLength = 20)
+
+#Output of kNN fit
+knnFit
+```
+```{r}
+#Plotting yields Number of Neighbours Vs accuracy (based on repeated cross validation)
+plot(knnFit)
+```
+```{r}
+knnPredict <- predict(knnFit,newdata = testing )
+#Get the confusion matrix to see accuracy value and other parameter values
+confusionMatrix(knnPredict, testing$class )
+```
+```{r}
+mean(knnPredict == testing$class)
+```
+```{r}
+library(pROC)
+knnPredict <- predict(knnFit,newdata = testing , type="prob")
+knnROC <- roc(testing$class,knnPredict[,"Botnet"], levels = c('Normal','Botnet'))#rev(testing$class))
+knnROC
+```
+
+```{r}
+plot(knnROC, type="S", print.thres= 0.5)
+```
+### Logistic Regression
+
+```{r}
+#logicRFit <- train(class ~ ., method='glm', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
+#logicRFit <- train(class ~ sp*wp*wnp*snp*ds*dm*dl*ss*sm*sl, method='glm', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
+logicRFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl, method='glm', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
+
+#summary(logicRFit)
+#Output of Logistic Regression fit
+logicRFit
+```
+
+```{r}
+
+logicRPredict <- predict(logicRFit, newdata = testing )
+
+confusionMatrix(logicRPredict, testing$class)
+```
+```{r}
+logicRPredict <- predict(logicRFit, newdata = testing, type="prob")
+logicROC <- roc(testing$class,logicRPredict[,"Botnet"], levels = c('Normal','Botnet'))#rev(testing$class))
+logicROC
+```
+```{r}
+plot(logicROC, type="S", print.thres= 0.5)
+```
+

@@ -1,0 +1,172 @@
+---
+title: "A simple Random Forest model for helping the labeling dataset process"
+author: "Jorge & Harpo"
+date: "11/4/2016"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+suppressMessages(library(caret))
+suppressMessages(library(dplyr))
+suppressMessages(library(doMC))
+suppressMessages(library(randomForest))
+registerDoMC(cores=4)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+## Datasets
+
+Datasets are part of the StratoshpereIPS projects (http://www.stratosphereips.org). The format of the dataset is explained in (https://stratosphereips.org/stratosphere-ips-generation-of-the-behavioral-models.html)
+
+
+1 Datasets are used: (available at dropbox)
+
+[All Dataset](https://www.dropbox.com/home/Phd/brainstorm/datasets)
+
+```{r}
+#setwd("/home/jguerra/R/labeling-dataset/")
+#lees el archivo
+datasetfull=read.csv(file="/home/jguerra/new_characteristic_vector.txt",header=F)
+datasetfull=cbind(rep(22),datasetfull)
+names(datasetfull)<-c("id","sp","wp","wnp","snp","ds","dm","dl","ss","sm","sl","length","class","subclass")
+datasetfull$class=factor(datasetfull$class)
+datasetfull$subclass=factor(datasetfull$subclass)
+datasetfull$id=factor(datasetfull$id)
+
+```
+
+
+## Feature engineering 
+
+For a given Stratosphere connection $N$:
+we create a feature vector $V(X_1,X_2,...,X_{10})$ where each $X_i$ calculate a value for the following features in $F(SP,WP,WNP,SNP,DS,DM,DL,SS,SL,SM)$. Then each $X_i=\frac{\sum(letters\in F_i) * 100}{|N|}/100$. The following python code is used for generating the features.
+
+
+##Correlation analisis of the new features
+```{r, fig.height=8, fig.width=12}
+splom(~datasetfull[,2:12],data=datasetfull,
+        groups=datasetfull$class,
+        diag.panel = function(x, ...){
+          yrng <- current.panel.limits()$ylim
+          d <- density(x, na.rm=TRUE)
+          d$y <- with(d, yrng[1] + 0.95 * diff(yrng) * y / max(y) )
+          panel.lines(d)
+          diag.panel.splom(x,...)
+        },cex=0.5,xlab="",ylab="",auto.key = TRUE,cex.labels=0.1,pscales = 0,alpha=0.5,varname.cex=0.8
+  )
+```
+
+
+## Class and subclass Distribution
+```{r, fig.height=8, fig.width=10, warning=FALSE}
+histogram(~class|id,datasetfull)
+histogram(~subclass|id,data=datasetfull,groups=class,col=c("skyblue","pink"),scales=list(x=list(rot=90),cex=0.7),layout=c(1,1),auto.key = F)
+```
+
+## Length Distribution
+```{r}
+densityplot(~length|id,data=datasetfull,groups=class,auto.key=T,scales=list(x=list(rot=45,relation='free',log=10),y=list(relation='free')),layout=c(1,1),breaks=5)
+```
+
+```{r, fig.height=8, fig.width=10}
+barchart(length~factor(subclass)|id,groups=class,data=datasetfull,auto.key=T,scales=list(x=list(rot=90),y=list(relation='free'),cex=0.70),layout=c(1,1))
+```
+
+
+## Setting dataset as training set using RandomOversampling
+```{r}
+#datasetfull=datasetfull %>% filter(length>5)
+
+trainIndex <- createDataPartition(datasetfull$class, p=0.80, list=FALSE)
+data_train <- datasetfull[ trainIndex,]
+data_test <- datasetfull[-trainIndex,]
+
+train=data_train %>% filter(length>5)
+train <- upSample(x = train,  y = train$subclass, yname="class")     
+# removing dataset Id,subclass, and class.1 (added by upSample)
+train <- train[,-c(1,14,15)]
+```
+
+## Random Forest Tuning over 10-fold cross validation
+```{r}
+ctrl_fast <- trainControl(method="cv", 
+                     repeats=1,
+                     number=2, 
+                     summaryFunction=twoClassSummary,
+                     verboseIter=T,
+                     classProbs=TRUE,
+                     allowParallel = TRUE)   
+# Random Forest
+rfFit <- train(class ~ .,
+               data = train,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+```
+
+
+### Final Model
+```{r}
+rfFit
+rfFit$finalModel
+```
+
+## Test on Dataset
+```{r}
+test45=data_test #%>% filter(id==45)
+# removing dataset Id and subclass
+test45 <- test45[,-c(1,14)]
+predsrfprobs=predict(rfFit,test45,type='prob')
+predsrf=ifelse(predsrfprobs$Botnet >0.5,'Botnet','Normal')
+confusionMatrix(predsrf,test45$class)
+```
+
+##  Incorrectly Classified Connections
+### False Positive
+```{r}
+subclasses=cbind(data_test %>% filter(id==22) %>% select(subclass,class),predsrf,predsrfprobs)
+fp=subclasses %>% filter(class=='Normal' & predsrf=='Botnet')# %>% select(subclass,Botnet,Normal)
+histogram(~subclass|predsrf,data=fp,scales=list(x=list(rot=22)),type='count')
+```
+
+### False Negative
+```{r}
+fn=subclasses %>% filter(class=='Botnet' & predsrf=='Normal') #%>% select(subclass,Botnet,Normal)
+histogram(~subclass|predsrf,data=fn,scales=list(x=list(rot=22)),type='count',col='orange')
+```
+
+## New Test on Dataset
+```{r, fig.height=3, fig.width=8}
+test87=data_test #%>% filter(id==22)
+# removing dataset Id and subclass
+test87 <- test87[,-c(1,14)]
+predsrfprobs=predict(rfFit,test87,type='prob')
+bwplot(~Botnet,data=predsrfprobs)
+bwplot(~Normal,data=predsrfprobs)
+predsrf=ifelse(predsrfprobs$Botnet >0.5,'Botnet','Normal')
+print(caret::confusionMatrix(predsrf,test87$class))
+
+```
+
+##  Incorrectly Classified Connections
+### False Positive
+```{r}
+subclasses=cbind(data_test %>% filter(id==22) %>% select(subclass,class),predsrf,predsrfprobs)
+fp=subclasses %>% filter(class=='Normal' & predsrf=='Botnet')# %>% select(subclass,Botnet,Normal)
+histogram(~subclass|predsrf,data=fp,scales=list(x=list(rot=22)),type='count')
+```
+
+### False Negative
+```{r}
+fn=subclasses %>% filter(class=='Botnet' & predsrf=='Normal') #%>% select(subclass,Botnet,Normal)
+histogram(~subclass|predsrf,data=fn,scales=list(x=list(rot=22)),type='count',col='orange')
+```
+
