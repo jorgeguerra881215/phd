@@ -87,13 +87,49 @@ train <- upSample(x = data_train,  y = data_train$class, yname="class")
 training <- train[,-c(11,12,13)]
 testing <- data_test[,-c(11,13)]
 training
+
+ctrl_fast <- trainControl(method="cv", 
+                     repeats=1,
+                     number=2, 
+                     summaryFunction=twoClassSummary,
+                     verboseIter=T,
+                     classProbs=TRUE,
+                     allowParallel = TRUE)  
+ctrl <- trainControl(method="repeatedcv",repeats = 3) #,classProbs=TRUE,summaryFunction = twoClassSummary)
 ```
 
 
 ### Random Forest Classificator
 ```{r}
-  
+  # Random Forest
+rfFit <- train(class ~ .,
+               data = training,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+
+rfFit
+rfFit$finalModel
 ```
+
+```{r}
+predsrfprobs=predict(rfFit,testing,type='prob')
+predsrf=ifelse(predsrfprobs$Botnet >=0.9,'Botnet','Normal')
+confusionMatrix(predsrf,testing$class)
+```
+
+```{r}
+library(ggplot2)
+library(plotROC)
+selectedIndices <- rfFit$pred$mtry == 2
+ggplot(cbind(predsrfprobs,class=testing$class), 
+       aes(m = Botnet, d = factor(class, labels=c("Normal","Botnet"),levels = c("Normal", "Botnet")))) + 
+    geom_roc(hjust = -0.4, vjust = 1.5,colour='orange') + 
+  theme_bw()
+
+cbind(predsrfprobs,class=testing$class)
+```
+
 
 ### KNN
 ```{r}
@@ -107,14 +143,6 @@ preProcValues <- preProcess(x = trainX,method = c("center", "scale"))
 preProcValues
 ```
 ```{r}
-ctrl_fast <- trainControl(method="cv", 
-                     repeats=1,
-                     number=2, 
-                     summaryFunction=twoClassSummary,
-                     verboseIter=T,
-                     classProbs=TRUE,
-                     allowParallel = TRUE)  
-ctrl <- trainControl(method="repeatedcv",repeats = 3) #,classProbs=TRUE,summaryFunction = twoClassSummary)
 knnFit <- train(class ~ ., data = training, method = "knn", trControl = ctrl_fast, preProcess = c("center","scale"), tuneLength = 20)
 
 #Output of kNN fit
