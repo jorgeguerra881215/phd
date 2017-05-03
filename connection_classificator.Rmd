@@ -89,8 +89,8 @@ testing <- data_test[,-c(11,13)]
 training
 
 ctrl_fast <- trainControl(method="cv", 
-                     repeats=1,
-                     number=2, 
+                     repeats=2,
+                     number=10, 
                      summaryFunction=twoClassSummary,
                      verboseIter=T,
                      classProbs=TRUE,
