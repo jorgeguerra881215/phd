@@ -197,3 +197,28 @@ logicROC
 plot(logicROC, type="S", print.thres= 0.5)
 ```
 
+### Naive Bayes
+```{r}
+naiveBayesFit <- train(class ~ ., method='nb', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
+
+naiveBayesFit
+```
+
+```{r}
+naiveBayesPredict <- predict(naiveBayesFit, newdata = testing )
+
+confusionMatrix(naiveBayesPredict, testing$class)
+```
+
+```{r}
+svmFit <- train(class ~ ., method='svmLinear', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
+
+svmFit
+```
+
+```{r}
+svmPredict <- predict(svmFit, newdata = testing )
+
+confusionMatrix(svmPredict, testing$class)
+```
+
