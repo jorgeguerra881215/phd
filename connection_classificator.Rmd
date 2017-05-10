@@ -77,6 +77,7 @@ feature_vectors$subclass = factor(feature_vectors$subclass)
 
 ### Create training set and testset
 ```{r}
+set.seed(300)
 trainIndex <- createDataPartition(feature_vectors$class, p=0.80, list=FALSE)
 data_train <- feature_vectors[ trainIndex,]
 data_test <- feature_vectors[-trainIndex,]
@@ -173,9 +174,9 @@ plot(knnROC, type="S", print.thres= 0.5)
 ### Logistic Regression
 
 ```{r}
-#logicRFit <- train(class ~ ., method='glm', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
+logicRFit <- train(class ~ ., method='glm', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
 #logicRFit <- train(class ~ sp*wp*wnp*snp*ds*dm*dl*ss*sm*sl, method='glm', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
-logicRFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl, method='glm', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
+#logicRFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl, method='glm', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
 
 #summary(logicRFit)
 #Output of Logistic Regression fit
