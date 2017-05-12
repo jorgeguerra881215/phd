@@ -223,3 +223,12 @@ svmPredict <- predict(svmFit, newdata = testing )
 confusionMatrix(svmPredict, testing$class)
 ```
 
+### Comparing Models
+```{r}
+resamps <- resamples(list(rf = rfFit, lr = logicRFit, nv = naiveBayesFit, svm = svmFit))
+summary(resamps)
+
+diffs <- diff(resamps)
+summary(diffs)
+```
+
