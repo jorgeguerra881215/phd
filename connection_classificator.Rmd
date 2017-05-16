@@ -275,9 +275,29 @@ ggplot(values)+
 ```{r}
 # Botnet probabilistic table
 botnet_prob_result = data.frame(testing$class, predsrfprobs$Botnet, knnPredict$Botnet, logicRPredict$Botnet, naiveBayesPredict$Botnet ,svmPredict$Botnet)
-names(botnet_prob_result) = c('True Class','Ramdom Forest','KNN','Logistic Regression', 'Naive Bayes', 'Suport VM')
-botnet_prob_result
-save(botnet_prob_result,file="botnet_prob_results.Rda")
+names(botnet_prob_result) = c('TrueClass','RamdomForest','KNN','LogisticRegression', 'NaiveBayes', 'SVM','subclass')
+```
+
+
+```{r}
+#load("./botnet_prob_results.Rda")
+
+botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(KNN),sd=sd(KNN)) %>% arrange(desc(n))
+botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(NaiveBayes),sd=sd(NaiveBayes)) %>% arrange(desc(n))%>% top_n(10)
+botnet_10_top<-botnet_prob_result %>% group_by(subclass) %>% summarise(n=n()) %>% arrange(desc(n))%>% top_n(10)
+botnet_10_top<-inner_join(botnet_10_top,botnet_prob_result,by="subclass")
+
+knn_plot<-bwplot(subclass~KNN,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
+rf_plot<-bwplot(subclass~RamdomForest,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
+rl_plot<-bwplot(subclass~LogisticRegression,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
+svm_plot<-bwplot(subclass~SVM,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
+
+library(grid)
+library(gridExtra)
+
+pl = list(knn_plot, rf_plot,rl_plot,svm_plot)
+do.call(grid.arrange, c(lapply(pl, update), list(nrow=1)))
+
 ```
 
 ```{r}
