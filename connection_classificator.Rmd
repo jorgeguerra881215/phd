@@ -169,7 +169,12 @@ knnROC
 ```
 
 ```{r}
-plot(knnROC, type="S", print.thres= 0.5)
+ggplot(cbind(knnPredict,class=testing$class), 
+       aes(m = Botnet, d = factor(class, labels=c("Normal","Botnet"),levels = c("Normal", "Botnet")))) + 
+    geom_roc(hjust = -0.4, vjust = 1.5,colour='orange') + 
+  theme_bw()
+
+#plot(knnROC, type="S", print.thres= 0.5)
 ```
 ### Logistic Regression
 
@@ -192,43 +197,84 @@ confusionMatrix(logicRPredict, testing$class)
 ```{r}
 logicRPredict <- predict(logicRFit, newdata = testing, type="prob")
 logicROC <- roc(testing$class,logicRPredict[,"Botnet"], levels = c('Normal','Botnet'))#rev(testing$class))
-logicROC
-```
-```{r}
-plot(logicROC, type="S", print.thres= 0.5)
+
+ggplot(cbind(logicRPredict,class=testing$class), 
+       aes(m = Botnet, d = factor(class, labels=c("Normal","Botnet"),levels = c("Normal", "Botnet")))) + 
+    geom_roc(hjust = -0.4, vjust = 1.5,colour='orange') + 
+  theme_bw()
+
+#logicROC
 ```
 
 ### Naive Bayes
 ```{r}
-naiveBayesFit <- train(class ~ ., method='nb', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
-
+naiveBayesFit <- train(class ~ ., method='nb', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training)
 naiveBayesFit
 ```
 
 ```{r}
-naiveBayesPredict <- predict(naiveBayesFit, newdata = testing )
+naiveBayesPredict <- predict(naiveBayesFit, newdata = testing)
 
 confusionMatrix(naiveBayesPredict, testing$class)
 ```
+```{r}
+naiveBayesPredict <- predict(naiveBayesFit, newdata = testing, type = 'prob')
+naiveBayesROC <- roc(testing$class,naiveBayesPredict[,"Botnet"], levels = c('Normal','Botnet'))#rev(testing$class))
+naiveBayesROC
 
+ggplot(cbind(naiveBayesPredict,class=testing$class), 
+       aes(m = Botnet, d = factor(class, labels=c("Normal","Botnet"),levels = c("Normal", "Botnet")))) + 
+    geom_roc(hjust = -0.4, vjust = 1.5,colour='orange') + 
+  theme_bw()
+
+#plot(naiveBayesROC, type="S", print.thres= 0.5)
+```
+
+
+### Suport Vector Machine
 ```{r}
 svmFit <- train(class ~ ., method='svmLinear', trControl = ctrl_fast,preProcess=c('scale', 'center'), data=training, family=binomial(link='logit'))
-
 svmFit
 ```
 
 ```{r}
-svmPredict <- predict(svmFit, newdata = testing )
-
+svmPredict <- predict(svmFit, newdata = testing)
 confusionMatrix(svmPredict, testing$class)
 ```
+
+```{r}
+svmPredict <- predict(svmFit, newdata = testing, type = "prob")
+
+svmROC <- roc(testing$class,svmPredict[,"Botnet"], levels = c('Normal','Botnet'))#rev(testing$class))
+svmROC
+
+ggplot(cbind(svmPredict,class=testing$class), 
+       aes(m = Botnet, d = factor(class, labels=c("Normal","Botnet"),levels = c("Normal", "Botnet")))) + 
+    geom_roc(hjust = -0.4, vjust = 1.5,colour='orange') + 
+  theme_bw()
+
+```
+
 
 ### Comparing Models
 ```{r}
 resamps <- resamples(list(rf = rfFit, lr = logicRFit, nv = naiveBayesFit, svm = svmFit))
 summary(resamps)
-
+bwplot(resamps)
 diffs <- diff(resamps)
 summary(diffs)
+values=resamps$values
+values
+names(values)[2]<-"rfSens"
+
+ggplot(values)+
+  geom_boxplot(aes(y=rfSens,x=1))
+
+```
+### Making probabilistic botnet table.
+```{r}
+botnet_prob_result = data.frame(predsrfprobs$Botnet, knnPredict$Botnet, logicRPredict$Botnet, naiveBayesPredict$Botnet ,svmPredict$Botnet)
+names(botnet_prob_result) = c('Ramdom Forest','KNN','Logistic Regression', 'Naive Bayes', 'Suport VM')
+botnet_prob_result
 ```
 
