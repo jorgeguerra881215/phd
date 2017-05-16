@@ -277,6 +277,7 @@ ggplot(values)+
 botnet_prob_result = data.frame(testing$class, predsrfprobs$Botnet, knnPredict$Botnet, logicRPredict$Botnet, naiveBayesPredict$Botnet ,svmPredict$Botnet)
 names(botnet_prob_result) = c('True Class','Ramdom Forest','KNN','Logistic Regression', 'Naive Bayes', 'Suport VM')
 botnet_prob_result
+save(botnet_prob_result,file="botnet_prob_results.Rda")
 ```
 
 ```{r}
