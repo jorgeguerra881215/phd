@@ -271,10 +271,18 @@ ggplot(values)+
   geom_boxplot(aes(y=rfSens,x=1))
 
 ```
-### Making probabilistic botnet table.
+### Making probabilistic table.
 ```{r}
-botnet_prob_result = data.frame(predsrfprobs$Botnet, knnPredict$Botnet, logicRPredict$Botnet, naiveBayesPredict$Botnet ,svmPredict$Botnet)
-names(botnet_prob_result) = c('Ramdom Forest','KNN','Logistic Regression', 'Naive Bayes', 'Suport VM')
+# Botnet probabilistic table
+botnet_prob_result = data.frame(testing$class, predsrfprobs$Botnet, knnPredict$Botnet, logicRPredict$Botnet, naiveBayesPredict$Botnet ,svmPredict$Botnet)
+names(botnet_prob_result) = c('True Class','Ramdom Forest','KNN','Logistic Regression', 'Naive Bayes', 'Suport VM')
 botnet_prob_result
+```
+
+```{r}
+#Normal probabilistic table
+normal_prob_result = data.frame(testing$class, predsrfprobs$Normal, knnPredict$Normal, logicRPredict$Normal, naiveBayesPredict$Normal ,svmPredict$Normal)
+names(normal_prob_result) = c('True Class','Ramdom Forest','KNN','Logistic Regression', 'Naive Bayes', 'Suport VM')
+normal_prob_result
 ```
 
