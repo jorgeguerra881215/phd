@@ -277,7 +277,9 @@ ggplot(values)+
 ```{r}
 # Botnet probabilistic table
 botnet_prob_result = data.frame(testing$class, predsrfprobs$Botnet, knnPredict$Botnet, logicRPredict$Botnet, naiveBayesPredict$Botnet ,svmPredict$Botnet)
+botnet_prob_result = botnet_prob_result %>% mutate(subclass = data_test$subclass)
 names(botnet_prob_result) = c('TrueClass','RamdomForest','KNN','LogisticRegression', 'NaiveBayes', 'SVM','subclass')
+botnet_prob_result
 ```
 
 
