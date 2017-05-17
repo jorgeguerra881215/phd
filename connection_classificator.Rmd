@@ -13,6 +13,7 @@ suppressMessages(library(stringr))
 suppressMessages(library(ISLR))
 suppressMessages(library(caret))
 suppressMessages(library(doMC))
+library(plotly)
 registerDoMC(cores=4)
 
 ```
@@ -23,7 +24,8 @@ When you save the notebook, an HTML file containing the code and output will be 
 
 ### Getting and proccesing the data
 ```{r}
-myData = read.csv('/home/jguerra/datasets/processed/data_all_result.txt', stringsAsFactors = F, sep = ' ')
+library(stringr)
+myData = read.csv('/home/harpo/Dropbox/ongoing-work/git-repos/labeling-datasets/phd/datasets/data_all_result.txt', stringsAsFactors = F, sep = ' ')
 
 #Create data backup
 myData.bkup <- myData
@@ -85,8 +87,8 @@ data_test <- feature_vectors[-trainIndex,]
 #data_train = data_train %>% filter(length>5)
 train <- upSample(x = data_train,  y = data_train$class, yname="class")
 #train <- upSample(x = train,  y = train$subclass, yname="class")
-training <- train[,-c(11,12,13)]
-testing <- data_test[,-c(11,13)]
+training <- train[,-c(11,12)]
+testing <- data_test[,-c(11)]
 training
 
 ctrl_fast <- trainControl(method="cv", 
@@ -281,7 +283,8 @@ names(botnet_prob_result) = c('TrueClass','RamdomForest','KNN','LogisticRegressi
 
 ```{r}
 #load("./botnet_prob_results.Rda")
-
+library(grid)
+library(gridExtra)
 botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(KNN),sd=sd(KNN)) %>% arrange(desc(n))
 botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(NaiveBayes),sd=sd(NaiveBayes)) %>% arrange(desc(n))%>% top_n(10)
 botnet_10_top<-botnet_prob_result %>% group_by(subclass) %>% summarise(n=n()) %>% arrange(desc(n))%>% top_n(10)
@@ -292,11 +295,101 @@ rf_plot<-bwplot(subclass~RamdomForest,data=botnet_10_top,do.out = FALSE,scales=l
 rl_plot<-bwplot(subclass~LogisticRegression,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
 svm_plot<-bwplot(subclass~SVM,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
 
-library(grid)
-library(gridExtra)
 
 pl = list(knn_plot, rf_plot,rl_plot,svm_plot)
+# do.call(grid.arrange, c(pl, nrow=1))
 do.call(grid.arrange, c(lapply(pl, update), list(nrow=1)))
+
+```
+
+#### some heatmaps
+```{r heatmaps}
+library(scales)
+knn_m<-matrix(botnet_prob_result[1:1830,]$KNN,ncol=30,nrow=61)
+svm_m<-matrix(botnet_prob_result[1:1830,]$SVM,ncol=30,nrow=61)
+lr_m<-matrix(botnet_prob_result[1:1830,]$LogisticRegression,ncol=30,nrow=61)
+nb_m<-matrix(botnet_prob_result[1:1830,]$NaiveBayes,ncol=30,nrow=61)
+rf_m<-matrix(botnet_prob_result[1:1830,]$RamdomForest,ncol=30,nrow=61)
+
+mdf<-as.data.frame(knn_m)
+mdf<-cbind(mdf,id=seq(1:61))
+mdf<-reshape2::melt(mdf,id.vars=c("id"))
+h1<-ggplot(mdf)+
+  geom_tile(aes(x=id,y=variable,fill=value),
+            colour = "white") +
+  scale_fill_gradient(low = "white",
+    high = "orange")+ylab("")+xlab("")+
+  guides(fill=FALSE)
+
+
+mdf<-as.data.frame(svm_m)
+mdf<-cbind(mdf,id=seq(1:61))
+mdf<-reshape2::melt(mdf,id.vars=c("id"))
+h2<-ggplot(mdf)+
+  geom_tile(aes(x=id,y=variable,fill=value),
+            colour = "white") +
+  scale_fill_gradient(low = "white",
+    high = "orange")+ylab("")+xlab("")+
+  guides(fill=FALSE)
+
+
+mdf<-as.data.frame(rf_m)
+mdf<-cbind(mdf,id=seq(1:61))
+mdf<-reshape2::melt(mdf,id.vars=c("id"))
+h3<-ggplot(mdf)+
+  geom_tile(aes(x=id,y=variable,fill=value),
+            colour = "white") +
+  scale_fill_gradient(low = "white",
+    high = "orange")+ylab("")+xlab("")+
+  guides(fill=FALSE)
+
+
+mdf<-as.data.frame(nb_m)
+mdf<-cbind(mdf,id=seq(1:61))
+mdf<-reshape2::melt(mdf,id.vars=c("id"))
+h4<-ggplot(mdf)+
+  geom_tile(aes(x=id,y=variable,fill=value),
+            colour = "white") +
+  scale_fill_gradient(low = "white",
+    high = "orange")+ylab("")+xlab("")+
+  guides(fill=FALSE)
+grid.arrange(h1,h2,h3,h4,ncol=2,nrow=2)
+```
+
+#### difference heatmaps
+```{r heatmap diff}
+mdf<-as.data.frame(rf_m - knn_m)
+mdf<-cbind(mdf,id=seq(1:61))
+mdf<-reshape2::melt(mdf,id.vars=c("id"))
+mdf<-cbind(mdf,subclass=(botnet_prob_result[1:1830,]$subclass))
+diff<-ggplot(mdf)+
+  geom_tile(aes(x=id,y=variable,fill=value,text=subclass),
+            colour = "white") +
+  scale_fill_gradientn(colours=c("red","white","green"),
+           values  = rescale(c(min(mdf$value), 0.05, max(mdf$value))))+
+           guides(fill=FALSE)+theme_bw()  
+ggplotly(diff)
+d3heatmap(rf_m - knn_m,colors = "Blues",cellnote=matrix(botnet_prob_result[1:1830,]$subclass,ncol=30,nrow=61))
+```
+
+### Clustering and PCA
+```{r clustering}
+
+kmeans_mod<-kmeans(testing[,1:10],centers = 10)
+testing_cluster<-cbind(testing,cluster=kmeans_mod$cluster)
+pca<-prcomp(testing[,c(-11,-12)], center = TRUE, scale. = TRUE) 
+pca_testing<-data.frame(pca$x,class=testing_cluster$class,
+                              subclass=testing_cluster$subclass,
+                               cluster=testing_cluster$cluster
+                               )
+g<-ggplot(pca_testing,aes(x=PC1,y=PC2))+
+  geom_jitter(aes(color=as.factor(subclass),text=cluster,shape=class))+
+  #geom_point(aes(shape=asignacion),size=3)+
+  ylab("PC1")+xlab("PC2")+
+  theme_classic()+
+#scale_shape_manual(values=c(8,6))+
+   guides(color=FALSE,alpha=FALSE)
+ggplotly(g)
 
 ```
 
