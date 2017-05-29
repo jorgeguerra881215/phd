@@ -70,10 +70,11 @@ myData <- myData %>% mutate(size_l = (size_l / letter_count))
 myData[1:20,]
 
 #Making feature vectors
-feature_vectors = myData[,c('strong_p','weak_p','weak_np','strong_np','duration_s','duration_m','duration_l','size_s','size_m','size_l','letter_count','Label','LabelName')]
-names(feature_vectors) = c("sp","wp","wnp","snp","ds","dm","dl","ss","sm","sl","length","class","subclass")
+feature_vectors = myData[,c('strong_p','weak_p','weak_np','strong_np','duration_s','duration_m','duration_l','size_s','size_m','size_l','letter_count','Label','LabelName','port','proto')]
+names(feature_vectors) = c("sp","wp","wnp","snp","ds","dm","dl","ss","sm","sl","length","class","subclass","port","proto")
 feature_vectors$class = factor(feature_vectors$class)
 feature_vectors$subclass = factor(feature_vectors$subclass)
+feature_vectors$proto = factor(feature_vectors$proto)
 ```
 
 ### Create training set and testset
@@ -89,6 +90,7 @@ train <- upSample(x = data_train,  y = data_train$class, yname="class")
 training <- train[,-c(11,12)]
 testing <- data_test[,-c(11)]
 training
+testing
 
 ctrl_fast <- trainControl(method="cv", 
                      repeats=2,
@@ -275,9 +277,9 @@ ggplot(values)+
 ### Making probabilistic table.
 ```{r}
 # Botnet probabilistic table
-botnet_prob_result = data.frame(testing$class, predsrfprobs$Botnet, knnPredict$Botnet, logicRPredict$Botnet, naiveBayesPredict$Botnet ,svmPredict$Botnet)
-botnet_prob_result = botnet_prob_result %>% mutate(subclass = data_test$subclass)
-names(botnet_prob_result) = c('TrueClass','RamdomForest','KNN','LogisticRegression', 'NaiveBayes', 'SVM','subclass')
+botnet_prob_result = data.frame(testing$class, predsrfprobs$Botnet, knnPredict$Botnet, logicRPredict$Botnet, naiveBayesPredict$Botnet ,svmPredict$Botnet, testing$subclass, testing$port, testing$proto)
+#botnet_prob_result = botnet_prob_result %>% mutate(subclass = data_test$subclass)
+names(botnet_prob_result) = c('TrueClass','RamdomForest','KNN','LogisticRegression', 'NaiveBayes', 'SVM','subclass','port','proto')
 botnet_prob_result
 ```
 
@@ -286,23 +288,45 @@ botnet_prob_result
 #load("./botnet_prob_results.Rda")
 library(grid)
 library(gridExtra)
-botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(KNN),sd=sd(KNN)) %>% arrange(desc(n))
+botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),sum_RF=sum(RamdomForest),sum_KNN=sum(KNN),sum_LR=sum(LogisticRegression),sum_NB=sum(NaiveBayes),sum_SVM=sum(SVM)) %>% arrange(desc(n))
 botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(NaiveBayes),sd=sd(NaiveBayes)) %>% arrange(desc(n))%>% top_n(10)
-botnet_10_top<-botnet_prob_result %>% group_by(subclass) %>% summarise(n=n()) %>% arrange(desc(n))%>% top_n(10)
+botnet_10_top<-botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(subclass) %>% summarise(n=n()) %>% arrange(desc(n))%>% top_n(10)
 botnet_10_top<-inner_join(botnet_10_top,botnet_prob_result,by="subclass")
 
-knn_plot<-bwplot(subclass~KNN,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
 rf_plot<-bwplot(subclass~RamdomForest,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
+knn_plot<-bwplot(subclass~KNN,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
 rl_plot<-bwplot(subclass~LogisticRegression,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
 svm_plot<-bwplot(subclass~SVM,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
-
 
 pl = list(knn_plot, rf_plot,rl_plot,svm_plot)
 # do.call(grid.arrange, c(pl, nrow=1))
 do.call(grid.arrange, c(lapply(pl, update), list(nrow=1)))
 
-#botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(subclass) %>% summarise(n=n(),RF_mean=mean(RamdomForest),KNN_mean=mean(KNN),LR_mean=mean(LogisticRegression),NB_mean=mean(NaiveBayes),SVM_mean=mean(SVM)) %>% arrange(desc(n))
+botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(subclass) %>% summarise(n=n(),sum_RF=sum(RamdomForest),sum_KNN=sum(KNN),sum_LR=sum(LogisticRegression),sum_NB=sum(NaiveBayes),sum_SVM=sum(SVM)) %>% arrange(desc(n))
 
+subclass = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(subclass) %>% summarise(n = n()) %>% arrange(desc(n))
+sc1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(subclass) %>% summarise(best_knn = n())
+sc2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(subclass) %>% summarise(best_lr = n())
+sc3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(subclass) %>% summarise(best_nb = n())
+sc4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(subclass) %>% summarise(best_svm = n())
+botnet_prob_result_table_subclass = inner_join(subclass,sc1,by="subclass") %>% inner_join(sc2,by="subclass") %>% inner_join(sc3,by="subclass") %>% inner_join(sc4,by="subclass")
+botnet_prob_result_table_subclass
+
+ports = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(port) %>% summarise(n = n()) %>% arrange(desc(n))
+p1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(port) %>% summarise(best_knn = n())
+p2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(port) %>% summarise(best_lr = n())
+p3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(port) %>% summarise(best_nb = n())
+p4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(port) %>% summarise(best_svm = n())
+botnet_prob_result_table_port = inner_join(ports,p1,by="port") %>% inner_join(p2,by="port") %>% inner_join(p3,by="port") %>% inner_join(p4,by="port")
+botnet_prob_result_table_port
+
+protos = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(proto) %>% summarise(n = n()) %>% arrange(desc(n))
+pr1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(proto) %>% summarise(best_knn = n())
+pr2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(proto) %>% summarise(best_lr = n())
+pr3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(proto) %>% summarise(best_nb = n())
+pr4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(proto) %>% summarise(best_svm = n())
+botnet_prob_result_table_proto = inner_join(protos,pr1,by="proto") %>% inner_join(pr2,by="proto") %>% inner_join(pr3,by="proto") %>% inner_join(pr4,by="proto")
+botnet_prob_result_table_proto
 ```
 
 #### some heatmaps
