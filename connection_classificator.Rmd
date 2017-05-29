@@ -90,7 +90,7 @@ train <- upSample(x = data_train,  y = data_train$class, yname="class")
 training <- train[,-c(11,12)]
 testing <- data_test[,-c(11)]
 training
-
+train
 ctrl_fast <- trainControl(method="cv", 
                      repeats=2,
                      number=10, 
@@ -287,9 +287,10 @@ botnet_prob_result
 #load("./botnet_prob_results.Rda")
 library(grid)
 library(gridExtra)
-botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(KNN),sd=sd(KNN)) %>% arrange(desc(n))
-botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(NaiveBayes),sd=sd(NaiveBayes)) %>% arrange(desc(n))%>% top_n(10)
-botnet_10_top<-botnet_prob_result %>% group_by(subclass) %>% summarise(n=n()) %>% arrange(desc(n))%>% top_n(10)
+#botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(KNN),sd=sd(KNN)) %>% arrange(desc(n))
+#botnet_prob_result %>% group_by(subclass) %>% summarise(n=n(),mean=mean(NaiveBayes),sd=sd(NaiveBayes)) %>% arrange(desc(n))%>% top_n(10)
+
+botnet_10_top<-botnet_prob_result %>% filter(TrueClass=="Normal") %>% group_by(subclass) %>% summarise(n=n()) %>% arrange(desc(n))%>% top_n(20)
 botnet_10_top<-inner_join(botnet_10_top,botnet_prob_result,by="subclass")
 
 knn_plot<-bwplot(subclass~KNN,data=botnet_10_top,do.out = FALSE,scales=list(y=list(draw=FALSE)))
@@ -364,6 +365,7 @@ mdf<-as.data.frame(rf_m - knn_m)
 mdf<-cbind(mdf,id=seq(1:61))
 mdf<-reshape2::melt(mdf,id.vars=c("id"))
 mdf<-cbind(mdf,subclass=(botnet_prob_result[1:1830,]$subclass))
+
 diff<-ggplot(mdf)+
   geom_tile(aes(x=id,y=variable,fill=value,text=subclass),
             colour = "white") +
@@ -374,6 +376,31 @@ ggplotly(diff)
 d3heatmap(rf_m - knn_m,colors = "Blues",cellnote=matrix(botnet_prob_result[1:1830,]$subclass,ncol=30,nrow=61))
 ```
 
+### Subclass probability analisys (Attempt I)
+KNN vs RF.
+```{r}
+a=mdf %>% filter(value< -0.09) %>% group_by(subclass) %>% summarise(totless009=n()) %>% arrange(desc(totless009))
+b=mdf  %>% group_by(subclass) %>% summarise(total=n()) %>% arrange(desc(total))
+
+subclass_percent_diff<-inner_join(a,b,by="subclass") %>% mutate(percent=totless009/total) %>% arrange(desc(total)) 
+subclass_percent_diff
+
+subclass_detections<-botnet_prob_result %>% mutate(detected_rf=ifelse(RamdomForest>0.5,"Botnet","Normal"),
+                              detected_knn=ifelse(KNN>0.5,"Botnet","Normal")) %>% 
+                              mutate(correct_rf=ifelse(detected_rf==TrueClass,1,0))%>%
+                              mutate(correct_knn=ifelse(detected_knn==TrueClass,1,0)) %>% 
+  group_by(subclass) %>% summarise(total_correct_rf=sum(correct_rf),total_correct_knn=sum(correct_knn))
+
+
+inner_join(subclass_detections,subclass_percent_diff,by="subclass")
+
+mdf<-cbind(mdf,rf=botnet_prob_result$RamdomForest[1:1830],knn=botnet_prob_result$KNN[1:1830],trueclass=botnet_prob_result$TrueClass[1:1830])
+botnet_prob_result
+mdf %>% filter(value< -0.09) %>% filter(trueclass=="Botnet")
+mdf %>% filter(value> 0.09) %>% filter(trueclass=="Normal")
+
+
+```
 ### Clustering and PCA
 ```{r clustering}
 
