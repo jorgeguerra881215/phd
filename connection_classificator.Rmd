@@ -303,32 +303,6 @@ svm_plot<-bwplot(subclass~SVM,data=botnet_10_top,do.out = FALSE,scales=list(y=li
 pl = list(knn_plot, rf_plot,rl_plot,svm_plot)
 # do.call(grid.arrange, c(pl, nrow=1))
 do.call(grid.arrange, c(lapply(pl, update), list(nrow=1)))
-
-botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(subclass) %>% summarise(n=n(),sum_RF=sum(RamdomForest),sum_KNN=sum(KNN),sum_LR=sum(LogisticRegression),sum_NB=sum(NaiveBayes),sum_SVM=sum(SVM)) %>% arrange(desc(n))
-
-subclass = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(subclass) %>% summarise(n = n()) %>% arrange(desc(n))
-sc1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(subclass) %>% summarise(best_knn = n())
-sc2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(subclass) %>% summarise(best_lr = n())
-sc3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(subclass) %>% summarise(best_nb = n())
-sc4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(subclass) %>% summarise(best_svm = n())
-botnet_prob_result_table_subclass = inner_join(subclass,sc1,by="subclass") %>% inner_join(sc2,by="subclass") %>% inner_join(sc3,by="subclass") %>% inner_join(sc4,by="subclass")
-botnet_prob_result_table_subclass
-
-ports = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(port) %>% summarise(n = n()) %>% arrange(desc(n))
-p1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(port) %>% summarise(best_knn = n())
-p2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(port) %>% summarise(best_lr = n())
-p3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(port) %>% summarise(best_nb = n())
-p4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(port) %>% summarise(best_svm = n())
-botnet_prob_result_table_port = inner_join(ports,p1,by="port") %>% inner_join(p2,by="port") %>% inner_join(p3,by="port") %>% inner_join(p4,by="port")
-botnet_prob_result_table_port
-
-protos = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(proto) %>% summarise(n = n()) %>% arrange(desc(n))
-pr1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(proto) %>% summarise(best_knn = n())
-pr2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(proto) %>% summarise(best_lr = n())
-pr3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(proto) %>% summarise(best_nb = n())
-pr4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(proto) %>% summarise(best_svm = n())
-botnet_prob_result_table_proto = inner_join(protos,pr1,by="proto") %>% inner_join(pr2,by="proto") %>% inner_join(pr3,by="proto") %>% inner_join(pr4,by="proto")
-botnet_prob_result_table_proto
 ```
 
 #### some heatmaps
@@ -427,6 +401,37 @@ mdf %>% filter(value> 0.09) %>% filter(trueclass=="Normal")
 
 
 ```
+### Subclass probability analisys (Attempt II)
+Random Forest vs. world
+```{r}
+botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(subclass) %>% summarise(n=n(),sum_RF=sum(RamdomForest),sum_KNN=sum(KNN),sum_LR=sum(LogisticRegression),sum_NB=sum(NaiveBayes),sum_SVM=sum(SVM)) %>% arrange(desc(n))
+
+subclass = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(subclass) %>% summarise(n = n()) %>% arrange(desc(n))
+sc1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(subclass) %>% summarise(best_knn = n())
+sc2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(subclass) %>% summarise(best_lr = n())
+sc3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(subclass) %>% summarise(best_nb = n())
+sc4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(subclass) %>% summarise(best_svm = n())
+botnet_prob_result_table_subclass = inner_join(subclass,sc1,by="subclass") %>% inner_join(sc2,by="subclass") %>% inner_join(sc3,by="subclass") %>% inner_join(sc4,by="subclass")
+botnet_prob_result_table_subclass
+
+ports = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(port) %>% summarise(n = n()) %>% arrange(desc(n))
+p1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(port) %>% summarise(best_knn = n())
+p2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(port) %>% summarise(best_lr = n())
+p3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(port) %>% summarise(best_nb = n())
+p4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(port) %>% summarise(best_svm = n())
+botnet_prob_result_table_port = inner_join(ports,p1,by="port") %>% inner_join(p2,by="port") %>% inner_join(p3,by="port") %>% inner_join(p4,by="port")
+botnet_prob_result_table_port
+
+protos = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% group_by(proto) %>% summarise(n = n()) %>% arrange(desc(n))
+pr1 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(proto) %>% summarise(best_knn = n())
+pr2 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(proto) %>% summarise(best_lr = n())
+pr3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(proto) %>% summarise(best_nb = n())
+pr4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(proto) %>% summarise(best_svm = n())
+botnet_prob_result_table_proto = inner_join(protos,pr1,by="proto") %>% inner_join(pr2,by="proto") %>% inner_join(pr3,by="proto") %>% inner_join(pr4,by="proto")
+botnet_prob_result_table_proto
+```
+
+
 ### Clustering and PCA
 ```{r clustering}
 
