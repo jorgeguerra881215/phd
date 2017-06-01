@@ -470,6 +470,27 @@ pr4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomFore
 botnet_prob_result_table_proto = inner_join(protos,pr1,by="proto") %>% inner_join(pr2,by="proto") %>% inner_join(pr3,by="proto") %>% inner_join(pr4,by="proto")
 botnet_prob_result_table_proto
 
+botnet_prob_result_table_subclass$subclass = as.factor(botnet_prob_result_table_subclass$subclass)
+data <- cbind(botnet_prob_result_table_subclass,id=seq(1:nrow(botnet_prob_result_table_subclass)))
+data <- reshape2::melt(data[,-1],id.vars=c("id"))
+data <- cbind(sub_class = botnet_prob_result_table_subclass$subclass,data)
+p01 <- ggplot(data, aes(sub_class, value)) +
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity")
+
+botnet_prob_result_table_port$port = as.factor(botnet_prob_result_table_port$port)
+data <- cbind(botnet_prob_result_table_port,id=seq(1:nrow(botnet_prob_result_table_port)))
+data <- reshape2::melt(data[,-1],id.vars=c("id"))
+data <- cbind(ports = botnet_prob_result_table_port$port,data)
+p02 <- ggplot(data, aes(ports, value)) +
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity")
+
+botnet_prob_result_table_proto$proto = as.factor(botnet_prob_result_table_proto$proto)
+data <- cbind(botnet_prob_result_table_proto,id=seq(1:nrow(botnet_prob_result_table_proto)))
+data<-reshape2::melt(data[,-1],id.vars=c("id"))
+data = cbind(protos = botnet_prob_result_table_proto$proto,data)
+p03 <- ggplot(data, aes(protos, value)) +
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity")
+
 ############################### Filter by epsilon distance ########################################
 epsilon = 0.09
 sc1_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% filter((KNN - RamdomForest) > epsilon) %>% group_by(subclass) %>% summarise(best_knn = n())
@@ -513,7 +534,7 @@ data<-reshape2::melt(data[,-1],id.vars=c("id"))
 data = cbind(protos = botnet_prob_result_table_proto_e$proto,data)
 p3 <- ggplot(data, aes(protos, value)) +
   geom_bar(aes(fill = variable), position = "dodge", stat="identity")
-multiplot(p1, p2, p3,cols=3)
+multiplot(p01, p1, p02, p2, p03, p3,cols=3)
 ```
 
 
