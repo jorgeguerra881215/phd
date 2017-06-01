@@ -401,6 +401,46 @@ mdf %>% filter(value> 0.09) %>% filter(trueclass=="Normal")
 
 
 ```
+### Useful functions
+```{r}
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+
 ### Subclass probability analisys (Attempt II)
 Random Forest vs. world
 ```{r}
@@ -429,6 +469,51 @@ pr3 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomFore
 pr4 = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(proto) %>% summarise(best_svm = n())
 botnet_prob_result_table_proto = inner_join(protos,pr1,by="proto") %>% inner_join(pr2,by="proto") %>% inner_join(pr3,by="proto") %>% inner_join(pr4,by="proto")
 botnet_prob_result_table_proto
+
+############################### Filter by epsilon distance ########################################
+epsilon = 0.09
+sc1_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% filter((KNN - RamdomForest) > epsilon) %>% group_by(subclass) %>% summarise(best_knn = n())
+sc2_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% filter((LogisticRegression - RamdomForest) > epsilon) %>% group_by(subclass) %>% summarise(best_lr = n())
+sc3_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% filter((NaiveBayes - RamdomForest) > epsilon) %>% group_by(subclass) %>% summarise(best_nb = n())
+sc4_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% filter((SVM - RamdomForest) > epsilon) %>% group_by(subclass) %>% summarise(best_svm = n())
+botnet_prob_result_table_subclass_e = inner_join(subclass,sc1_e,by="subclass") %>% inner_join(sc2_e,by="subclass") %>% inner_join(sc3_e,by="subclass") %>% inner_join(sc4_e,by="subclass")
+botnet_prob_result_table_subclass_e
+
+p1_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% filter((KNN - RamdomForest) > epsilon) %>% group_by(port) %>% summarise(best_knn = n())
+p2_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% filter((LogisticRegression - RamdomForest) > epsilon) %>% group_by(port) %>% summarise(best_lr = n())
+p3_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% filter((NaiveBayes - RamdomForest) > epsilon) %>% group_by(port) %>% summarise(best_nb = n())
+p4_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% filter((SVM - RamdomForest) > epsilon) %>% group_by(port) %>% summarise(best_svm = n())
+botnet_prob_result_table_port_e = inner_join(ports,p1_e,by="port") %>% inner_join(p2_e,by="port") %>% inner_join(p3_e,by="port") %>% inner_join(p4_e,by="port")
+botnet_prob_result_table_port_e
+
+pr1_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% filter((KNN - RamdomForest) > epsilon) %>% group_by(proto) %>% summarise(best_knn = n())
+pr2_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% filter((LogisticRegression - RamdomForest) > epsilon) %>% group_by(proto) %>% summarise(best_lr = n())
+pr3_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% filter((NaiveBayes - RamdomForest) > epsilon) %>% group_by(proto) %>% summarise(best_nb = n())
+pr4_e = botnet_prob_result %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% filter((SVM - RamdomForest) > epsilon) %>% group_by(proto) %>% summarise(best_svm = n())
+botnet_prob_result_table_proto_e = inner_join(protos,pr1_e,by="proto") %>% inner_join(pr2_e,by="proto") %>% inner_join(pr3_e,by="proto") %>% inner_join(pr4_e,by="proto")
+botnet_prob_result_table_proto_e
+
+botnet_prob_result_table_subclass_e$subclass = as.factor(botnet_prob_result_table_subclass_e$subclass)
+data <- cbind(botnet_prob_result_table_subclass_e,id=seq(1:nrow(botnet_prob_result_table_subclass_e)))
+data <- reshape2::melt(data[,-1],id.vars=c("id"))
+data <- cbind(sub_class = botnet_prob_result_table_subclass_e$subclass,data)
+p1 <- ggplot(data, aes(sub_class, value)) +
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity")
+
+botnet_prob_result_table_port_e$port = as.factor(botnet_prob_result_table_port_e$port)
+data <- cbind(botnet_prob_result_table_port_e,id=seq(1:nrow(botnet_prob_result_table_port_e)))
+data <- reshape2::melt(data[,-1],id.vars=c("id"))
+data <- cbind(ports = botnet_prob_result_table_port_e$port,data)
+p2 <- ggplot(data, aes(ports, value)) +
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity")
+
+botnet_prob_result_table_proto_e$proto = as.factor(botnet_prob_result_table_proto_e$proto)
+data <- cbind(botnet_prob_result_table_proto_e,id=seq(1:nrow(botnet_prob_result_table_proto_e)))
+data<-reshape2::melt(data[,-1],id.vars=c("id"))
+data = cbind(protos = botnet_prob_result_table_proto_e$proto,data)
+p3 <- ggplot(data, aes(protos, value)) +
+  geom_bar(aes(fill = variable), position = "dodge", stat="identity")
+multiplot(p1, p2, p3,cols=3)
 ```
 
 
@@ -452,6 +537,96 @@ g<-ggplot(pca_testing,aes(x=PC1,y=PC2))+
 ggplotly(g)
 
 ```
+###### Cluster probability analisys (Attempt II)
+```{r}
+botnet_prob_cluster <- cbind(botnet_prob_result,cluster=kmeans_mod$cluster)
+botnet_prob_cluster
+epsilon = 0.09
+cluster = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% group_by(cluster) %>% summarise(n = n()) %>% arrange(desc(n))
+cl1 = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% group_by(cluster) %>% summarise(best_knn = n())
+cl2 = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% group_by(cluster) %>% summarise(best_lr = n())
+cl3 = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% group_by(cluster) %>% summarise(best_nb = n())
+cl4 = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% group_by(cluster) %>% summarise(best_svm = n())
+botnet_prob_result_table_cluster = inner_join(cluster,cl1,by="cluster") %>% inner_join(cl2,by="cluster") %>% inner_join(cl3,by="cluster") %>% inner_join(cl4,by="cluster")
+botnet_prob_result_table_cluster
+
+cl1_e = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < KNN) %>% filter((KNN - RamdomForest) > epsilon) %>% group_by(cluster) %>% summarise(best_knn = n())
+cl2_e = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < LogisticRegression) %>% filter((LogisticRegression - RamdomForest) > epsilon) %>% group_by(cluster) %>% summarise(best_lr = n())
+cl3_e = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < NaiveBayes) %>% filter((NaiveBayes - RamdomForest) > epsilon) %>% group_by(cluster) %>% summarise(best_nb = n())
+cl4_e = botnet_prob_cluster %>% filter(TrueClass == 'Botnet') %>% filter(RamdomForest < SVM) %>% filter((SVM - RamdomForest) > epsilon) %>% group_by(cluster) %>% summarise(best_svm = n())
+botnet_prob_result_table_cluster_e = inner_join(cluster,cl1_e,by="cluster") %>% inner_join(cl2_e,by="cluster") %>% inner_join(cl3_e,by="cluster") %>% inner_join(cl4_e,by="cluster")
+botnet_prob_result_table_cluster_e
+
+cluster_bot = botnet_prob_cluster %>% filter(TrueClass == 'Botnet')
+
+```
+### 
+```{r}
+#library(ggalt)
+library(ggfortify)
+#theme_set(theme_classic())
+
+cluster1 <- pca_testing[pca_testing$cluster == 1,]
+cluster2 <- pca_testing[pca_testing$cluster == 2,]
+cluster3 <- pca_testing[pca_testing$cluster == 3,]
+cluster4 <- pca_testing[pca_testing$cluster == 4,]
+cluster5 <- pca_testing[pca_testing$cluster == 5,]
+cluster6 <- pca_testing[pca_testing$cluster == 6,]
+cluster7 <- pca_testing[pca_testing$cluster == 7,]
+cluster8 <- pca_testing[pca_testing$cluster == 8,]
+cluster9 <- pca_testing[pca_testing$cluster == 9,]
+cluster10 <- pca_testing[pca_testing$cluster == 10,]
+
+pca_testing_botnet = pca_testing %>% filter(class == 'Botnet')
+g2<-ggplot(pca_testing_botnet,aes(x=PC1,y=PC2))+
+  geom_jitter(aes(color=as.factor(cluster),text=cluster,shape=as.factor(subclass)))+
+  #geom_point(aes(shape=asignacion),size=3)+
+  ylab("PC1")+xlab("PC2")+
+  theme_classic()+
+#scale_shape_manual(values=c(8,6))+
+   guides(color=FALSE,alpha=FALSE)+
+  geom_encircle(data = cluster1, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster2, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = cluster3, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster4, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster5, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = cluster6, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster7, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster8, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = cluster9, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = cluster10, aes(x=PC1, y=PC2))
+ggplotly(g2)
+
+g2<-ggplot(pca_testing_botnet,aes(x=PC1,y=PC2))+
+  geom_jitter(aes(color=as.factor(cluster),text=cluster,shape=as.factor(subclass)))+
+  #geom_point(aes(shape=asignacion),size=3)+
+  ylab("PC1")+xlab("PC2")+
+  theme_classic()+
+#scale_shape_manual(values=c(8,6))+
+   guides(color=FALSE,alpha=FALSE)
+
+
+# devtools::install_github("hrbrmstr/ggalt")
+
+# Data frame of principal components ----------------------
+df_pc <- data.frame(pca_mod$x, Species=iris$Species)  # dataframe of principal components
+df_pc_vir <- df_pc[df_pc$Species == "virginica", ]  # df for 'virginica'
+df_pc_set <- df_pc[df_pc$Species == "setosa", ]  # df for 'setosa'
+df_pc_ver <- df_pc[df_pc$Species == "versicolor", ]  # df for 'versicolor'
+ 
+# Plot ----------------------------------------------------
+ggplot(df_pc, aes(PC1, PC2, col=Species)) + 
+  geom_point(aes(shape=Species), size=2) +   # draw points
+  labs(title="Iris Clustering", 
+       subtitle="With principal components PC1 and PC2 as X and Y axis",
+       caption="Source: Iris") + 
+  coord_cartesian(xlim = 1.2 * c(min(df_pc$PC1), max(df_pc$PC1)), 
+                  ylim = 1.2 * c(min(df_pc$PC2), max(df_pc$PC2))) +   # change axis limits
+  geom_encircle(data = df_pc_vir, aes(x=PC1, y=PC2)) +   # draw circles
+  geom_encircle(data = df_pc_set, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = df_pc_ver, aes(x=PC1, y=PC2))
+```
+
 
 ```{r}
 #Normal probabilistic table
