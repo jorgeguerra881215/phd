@@ -101,6 +101,9 @@ ctrl_fast <- trainControl(method="cv",
                      classProbs=TRUE,
                      allowParallel = TRUE)  
 ctrl <- trainControl(method="repeatedcv",repeats = 3) #,classProbs=TRUE,summaryFunction = twoClassSummary)
+
+data_train
+
 ```
 
 
@@ -119,8 +122,11 @@ rfFit$finalModel
 
 ```{r}
 predsrfprobs=predict(rfFit,testing,type='prob')
-predsrf=ifelse(predsrfprobs$Botnet >=0.9,'Botnet','Normal')
+predsrf=ifelse(predsrfprobs$Botnet >=0.5,'Botnet','Normal')
 confusionMatrix(predsrf,testing$class)
+a <- confusionMatrix(predsrf,testing$class)
+a$overall
+str(a$overall)
 ```
 
 ```{r}
@@ -534,7 +540,7 @@ data<-reshape2::melt(data[,-1],id.vars=c("id"))
 data = cbind(protos = botnet_prob_result_table_proto_e$proto,data)
 p3 <- ggplot(data, aes(protos, value)) +
   geom_bar(aes(fill = variable), position = "dodge", stat="identity")
-multiplot(p01, p1, p02, p2, p03, p3,cols=3)
+multiplot(p02, p2, p03, p3,cols=2)
 ```
 
 
@@ -583,7 +589,7 @@ cluster_bot = botnet_prob_cluster %>% filter(TrueClass == 'Botnet')
 ```
 ### 
 ```{r}
-#library(ggalt)
+library(ggalt)
 library(ggfortify)
 #theme_set(theme_classic())
 
@@ -627,6 +633,25 @@ g2<-ggplot(pca_testing_botnet,aes(x=PC1,y=PC2))+
    guides(color=FALSE,alpha=FALSE)
 
 
+g3 <- ggplot(pca_testing_botnet, aes(PC1, PC2, col=as.factor(cluster))) + 
+  geom_point(aes(shape=as.factor(cluster)), size=2) +   # draw points
+  labs(title="Botnet Clustering", 
+       subtitle="With principal components PC1 and PC2 as X and Y axis",
+       caption="Source: Strathosphere") + 
+  #coord_cartesian(xlim = 1.2 * c(min(df_pc$PC1), max(df_pc$PC1)), 
+  #                ylim = 1.2 * c(min(df_pc$PC2), max(df_pc$PC2))) +   # change axis limits
+  geom_encircle(data = cluster1, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster2, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = cluster3, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster4, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster5, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = cluster6, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster7, aes(x=PC1, y=PC2)) +
+  geom_encircle(data = cluster8, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = cluster9, aes(x=PC1, y=PC2)) + 
+  geom_encircle(data = cluster10, aes(x=PC1, y=PC2))
+ggplotly(g3)
+g3
 # devtools::install_github("hrbrmstr/ggalt")
 
 # Data frame of principal components ----------------------
@@ -647,8 +672,105 @@ ggplot(df_pc, aes(PC1, PC2, col=Species)) +
   geom_encircle(data = df_pc_set, aes(x=PC1, y=PC2)) + 
   geom_encircle(data = df_pc_ver, aes(x=PC1, y=PC2))
 ```
+### Bagging strategies
+```{r}
+set.seed(200)
+#Bagging by port
+c1 = training %>% filter(port == '80')
+c2 = training %>% filter(port %in% c('25','443'))
+c3 = training %>% filter(port %in% c('6667','53'))
+c4 = training %>% filter(!(port %in% c('80','25','443','6667','53')))
+
+#Bagging by cluster TODO
+
+rfFit_by_port = train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+               data = c1,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+rfFit_by_port$finalModel
+
+rfFit_by_port_c2 = train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+               data = c2,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+rfFit_by_port_c2$finalModel
+
+rfFit_by_port_c3 = train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+               data = c3,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+rfFit_by_port_c2$finalModel
+
+rfFit_by_port_c4 = train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+               data = c4,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+rfFit_by_port_c4$finalModel
+```
+### Bagging using adabag
+```{r}
+library(adabag)
+set.seed(2)
+training.bagging = bagging(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,data = training, mfinal = 10)
+training.bagging$importance
+
+training.predbagging = predict.bagging(training.bagging,newdata = testing)
+training.predbagging$confusion
+training.predbagging$error
+
+training.bagging.cv = bagging.cv(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,data = training,v = 10, mfinal = 10)
+training.bagging.cv$confusion
+training.bagging.cv$error
+
+```
+### Training with some data set size.
+```{r}
+set.seed(200)
+library(doParallel)
+cl <- makeCluster(2)
+registerDoParallel(cl)
+size_training <- nrow(training)
+count_random <- foreach(i=3:13) %dopar% {
+  ((i*(i+1))/2)^2
+}
+count_random
+metric <- foreach(i=3:13) %dopar% {
+  library(caret)
+  count <- ((i*(i+1))/2)^2
+  aux_training_set <- training[sample(size_training, count), ]
+  
+  #training Random Forest with new training set.
+  new_rfFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+               data = aux_training_set,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+  
+  predsrfprobs_2 <- predict(new_rfFit,testing,type='prob')
+  predsrf_2 <- ifelse(predsrfprobs_2$Botnet >=0.5,'Botnet','Normal')
+  cm <- confusionMatrix(predsrf_2,testing$class)
+  metric <- cm$overall[1]
+  metric
+}
+
+output <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric))
+output
+gg <- ggplot(data = output)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="Accuracy", 
+       color=NULL)
+
+```
 
 
+### Normal Probabilistic table
 ```{r}
 #Normal probabilistic table
 normal_prob_result = data.frame(testing$class, predsrfprobs$Normal, knnPredict$Normal, logicRPredict$Normal, naiveBayesPredict$Normal ,svmPredict$Normal)
