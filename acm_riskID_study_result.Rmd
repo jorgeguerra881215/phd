@@ -1,0 +1,42 @@
+---
+title: "ACM RiskID Script Result"
+output: html_notebook
+---
+
+#Environment
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(stringr))
+suppressMessages(library(caret))
+suppressMessages(library(doMC))
+suppressMessages(library(plotly))
+```
+
+#Load Data
+```{r}
+study_dataset <- read.csv('/home/jguerra/datasets/acm_riskID_study/ctu13_riskID_dataset_random.txt', stringsAsFactors = F, sep = '|')
+study_result <- read.csv('/home/jguerra/datasets/acm_riskID_study/urank_logs.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE)
+```
+
+```{r}
+names(study_result) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+study_result 
+study_result %>% group_by(session_id) %>% summarise(n=n()) 
+```
+
+#Correct Label count
+```{r}
+label_botnet <- study_result %>% filter(action == 'Label Botnet')
+label_botnet
+label_normal <- study_result %>% filter(action == 'Label Normal')
+label_normal
+label_action <- bind_rows(label_botnet, label_normal)
+label_action <- label_action[,c('connection_id','action')]
+names(label_action) <- c('id','action')
+study_dataset[,c(1,2)]
+label_action_result = merge(x = label_action, y = study_dataset[,c(1,2)], by = "id", all.x = TRUE)
+label_action_result
+ifelse(subclass == 'botnet' & predict > 0.5,'correct','incorrect')
+label_action_result_final = label_action_result %>% mutate(result = ifelse((action == 'Label Botnet' & class == 'botnet') | (action == 'Label Normal' & class == 'normal'),1,0))
+label_action_result_final
+```
