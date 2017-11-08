@@ -60,6 +60,24 @@ feature_vectors_cleaned
 
 ```
 
+### Removing excesive Botnet and Normal class(Making the dataset more equitable)
+```{r}
+feature_vectors_cleaned.bkp <- feature_vectors_cleaned
+feature_vectors_cleaned %>% group_by(class) %>% summarise(n=n()) %>% arrange(desc(n))
+feature_vectors_cleaned_aux_botnet <- feature_vectors_cleaned %>% filter(class == 'Botnet-TCP-SMTP-Attempt-SPAM')
+feature_vectors_cleaned_aux_normal <- feature_vectors_cleaned %>% filter(class == 'Normal-TCP-HTTP')
+feature_vectors_cleaned_aux_botnet
+feature_vectors_cleaned_aux_normal
+
+feature_vectors_cleaned_aux_rest <- feature_vectors_cleaned %>% filter(class != 'Botnet-TCP-SMTP-Attempt-SPAM') %>% filter(class != 'Normal-TCP-HTTP')
+feature_vectors_cleaned_aux_rest %>% group_by(class) %>% summarise(n=n()) %>% arrange(desc(n))
+aux1 <- rbind(feature_vectors_cleaned_aux_botnet[1:500,],feature_vectors_cleaned_aux_normal[1:500,])
+aux1 %>% group_by(class) %>% summarise(n=n()) %>% arrange(desc(n))
+aux <- rbind(feature_vectors_cleaned_aux_rest,aux1)
+aux %>% group_by(class) %>% summarise(n=n()) %>% arrange(desc(n))
+feature_vectors_cleaned <- aux
+```
+
 ### Create training set and testset
 ```{r}
 set.seed(212)
@@ -144,79 +162,31 @@ plot(1:k.max, sil, type = "b", pch = 19,
 abline(v = which.max(sil), lty = 2)
 
 ```
-### Useful function
+### Useful functions
 ```{r}
-cold_start_graphic <- function(training.sampled,testing,settings){
-  library(doParallel)
-  cl <- makeCluster(2)
-  registerDoParallel(cl)
-  size_training <- nrow(training.sampled)
-  split_size_training = size_training / 200
-  
-  count_random <- foreach(i=1:split_size_training) %dopar% {
-    200 * i
-  }
-  metric <- foreach(i=1:split_size_training) %dopar% {
-    library(caret)
-    #library(dplyr)
-    count <- 200 * i
-    aux_training_set <- training.sampled[c(1:count), ]#training[sample(size_training, count), ]
-    clusters <- kmeans(aux_training_set[,-c(11,12,13,14)],3,nstart = 25)
-    aux_training_set_cluster <- cbind(aux_training_set, cluster = clusters$cluster)
-    result_vector <- numeric(nrow(testing))
-    
-    for (j in c(1:3)){
-      cluster_data <- dplyr::filter(aux_training_set_cluster, cluster == j)
-      new_rfFit <- train(subclass ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
-                 data = cluster_data,
-                 metric="ROC",
-                 method = "rf",
-                 trControl = settings)
-      predsrfprobs <- predict(new_rfFit,testing,type='prob')
-      
-      for (k in c(1:length(result_vector))){
-        if(predsrfprobs$botnet[k] > 0.5){
-          result_vector[k] <- result_vector[k] + 1
-        }
-        else{
-          result_vector[k] <- result_vector[k] - 1
-        }
-      }
-    }
-    a = ifelse(result_vector > 0,'botnet','normal')
-    cm <- confusionMatrix(a,testing$subclass)
-    metric <- cm$byClass['F1']#cm$overall[1]
-    metric
-  }
-  output <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric))
-  output
-  gg <- ggplot(data = output)
-  gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
-    labs(title="Random Forest through data training size", 
-         #subtitle="Drawn from Long Data format", 
-         caption="Source: CTU-13", 
-         y="F1 Score", 
-         color=NULL)
-}
-
 cold_start_data <- function(training.sampled,testing,settings){
   library(doParallel)
   cl <- makeCluster(2)
   registerDoParallel(cl)
   size_training <- nrow(training.sampled)
   split_size_training = size_training / 200
+  testing_result = data.frame(numeric(nrow(testing)))
   
   count_random <- foreach(i=1:split_size_training) %dopar% {
     200 * i
   }
-  metric <- foreach(i=1:split_size_training) %dopar% {
-    library(caret)
+  metric <- numeric(split_size_training)
+  metric_t <- numeric(split_size_training)
+  #metric <- foreach(i=1:split_size_training) %do% {
+  for(i in c(1:split_size_training)){
+    #library(caret)
     #library(dplyr)
     count <- 200 * i
     aux_training_set <- training.sampled[c(1:count), ]#training[sample(size_training, count), ]
     clusters <- kmeans(aux_training_set[,-c(11,12,13,14)],3,nstart = 25)
     aux_training_set_cluster <- cbind(aux_training_set, cluster = clusters$cluster)
     result_vector <- numeric(nrow(testing))
+    result_vector_trainning <- numeric(nrow(aux_training_set))
     
     for (j in c(1:3)){
       cluster_data <- dplyr::filter(aux_training_set_cluster, cluster == j)
@@ -225,6 +195,7 @@ cold_start_data <- function(training.sampled,testing,settings){
                  metric="ROC",
                  method = "rf",
                  trControl = settings)
+      #Testing predict
       predsrfprobs <- predict(new_rfFit,testing,type='prob')
       
       for (k in c(1:length(result_vector))){
@@ -235,15 +206,116 @@ cold_start_data <- function(training.sampled,testing,settings){
           result_vector[k] <- result_vector[k] - 1
         }
       }
+      
+      #Trainning predict
+      predsrfprobs_t <- predict(new_rfFit,aux_training_set,type='prob')
+      for (k in c(1:length(result_vector_trainning))){
+        if(predsrfprobs_t$botnet[k] > 0.5){
+          result_vector_trainning[k] <- result_vector_trainning[k] + 1
+        }
+        else{
+          result_vector_trainning[k] <- result_vector_trainning[k] - 1
+        }
+      }
     }
     a = ifelse(result_vector > 0,'botnet','normal')
+    b <- ifelse(result_vector_trainning > 0,'botnet','normal')
+    testing_result <- cbind(testing_result,'result' = result_vector)
     cm <- confusionMatrix(a,testing$subclass)
-    metric <- cm$byClass['F1']#cm$overall[1]
-    metric
+    metric[i] <- cm$byClass['F1']#cm$overall[1]
+    
+    cm_t <- confusionMatrix(b,aux_training_set$subclass)
+    metric_t[i] <- cm_t$byClass['F1']
+    #list('metric' = metric, 'metric_t' = metric_t)
   }
   output <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric))
-  output
+  output_t <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric_t))
+  list_result <- list('output' = output, 'output_t' = output_t, 'testing_result' = testing_result)
 }
+
+cold_start_data_only_rf <- function(training.sampled,testing,settings){
+  size_training <- nrow(training.sampled)
+  split_size_training = size_training / 200
+  testing_result = data.frame(numeric(nrow(testing)))
+  
+  count_random <- foreach(i=1:split_size_training) %dopar% {
+    200 * i
+  }
+  metric <- numeric(split_size_training)
+  metric_t <- numeric(split_size_training)
+  #metric <- foreach(i=1:split_size_training) %do% {
+  for(i in c(1:split_size_training)){
+    #library(caret)
+    #library(dplyr)
+    count <- 200 * i
+    aux_training_set <- training.sampled[c(1:count), ]#training[sample(size_training, count), ]
+    new_rfFit <- train(subclass ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+                 data = aux_training_set,
+                 metric="ROC",
+                 method = "rf",
+                 trControl = settings)
+    #Testing predict
+    predsrfprobs <- predict(new_rfFit,testing,type='prob')
+    predsrf <- ifelse(predsrfprobs$botnet >=0.5,'botnet','normal')
+    cm <- confusionMatrix(predsrf,testing$subclass)
+    metric[i] <- cm$byClass['F1']
+    
+    
+    #Trainning predict
+    predsrfprobs_t <- predict(new_rfFit,aux_training_set,type='prob')
+    predsrf_t <- ifelse(predsrfprobs_t$botnet >= 0.5,'botnet','normal')
+    cm_t <- confusionMatrix(predsrf_t,aux_training_set$subclass)
+    metric_t[i] <- cm_t$byClass['F1']
+    
+  }
+  output <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric))
+  output_t <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric_t))
+  list_result <- list('output' = output, 'output_t' = output_t, 'testing_result' = testing_result)
+}
+
+generate_data_noisy <- function(dataset, porcent){
+  list_aux <- sample(nrow(dataset) ,porcent)
+  noisy_data_sample <- dataset[list_aux,]
+  no_noisy_data_sample <- dataset[-list_aux,]
+  
+  noisy_data_sample_b <- noisy_data_sample %>% filter(class == 'Botnet')
+  noisy_data_sample_n <- noisy_data_sample %>% filter(class == 'Normal')
+  
+  noisy_data_sample_b$class <- as.character(noisy_data_sample_b$class)
+  noisy_data_sample_b$class[noisy_data_sample_b$class == 'Botnet'] <- 'Normal'
+  noisy_data_sample_b$class <- as.factor(noisy_data_sample_b$class)
+  
+  noisy_data_sample_n$class <- as.character(noisy_data_sample_n$class)
+  noisy_data_sample_n$class[noisy_data_sample_n$class == 'Normal'] <- 'Botnet'
+  noisy_data_sample_n$class <- as.factor(noisy_data_sample_n$class)
+  
+  noisy_data <- rbind(noisy_data_sample_b, noisy_data_sample_n)
+  training_noisy <- rbind(no_noisy_data_sample,noisy_data)
+  training_noisy <- training_noisy[sample(nrow(training_noisy),nrow(training_noisy)),]
+  return(training_noisy)
+}
+
+get_ELA_measure <- function(A0, Ax){
+  RLA <- (A0 - Ax) / A0
+  FA0 <- (100 - A0) / A0
+  ELA <- RLA + FA0
+  return(ELA)
+}
+
+randomForest_performace <- function(training_data, testing_data, metric){
+  rfFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+                 data = training_data,
+                 metric="ROC",
+                 method = "rf",
+                 trControl = settings)
+  predsrfprobs <- predict(rfFit,testing_data,type='prob')
+  predsrf <- ifelse(predsrfprobs$Botnet >=0.5,'Botnet','Normal')
+  cm <- confusionMatrix(predsrf,testing_data$class)
+  result <- cm$byClass[metric]
+  return(result)
+}
+training
+testing
 ```
 
 ### Data training partitions: cold start study
@@ -253,19 +325,44 @@ set.seed(201)
 size_training <- nrow(training)
 training.sampled_1 <- training[sample(size_training, size_training), ]
 
-output <- cold_start_data(training.sampled_1, testing, settings = ctrl_fast)
-output
-gg <- ggplot(data = output)
-  gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
-    labs(title="Random Forest through data training size", 
-         #subtitle="Drawn from Long Data format", 
-         caption="Source: CTU-13", 
-         y="F1 Score", 
-         color=NULL)
+result <- cold_start_data(training.sampled_1, testing, settings = ctrl_fast)
+output_1 <- result$output
+output_t_1 <- result$output_t
+output_1
+
+gg <- ggplot(data = output_1)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
 first_training_sample <- training.sampled_1[1:200,]
 ggplot(first_training_sample) + geom_bar(aes(subclass))
 class_distribution <- first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
 ggplot(first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+testing_result <- result$testing_result
+#testing_result
+
+gg <- ggplot(data = output_t_1)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+output_t_aux_1 <- output_t_1
+names(output_t_aux_1) <- c('data_count_t','metric_t')
+output_result_1 <- cbind(output_1,output_t_aux_1)
+gg <- ggplot(data = output_result_1)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
 ```
 ### Iteration #2
 ```{r}
@@ -273,9 +370,12 @@ set.seed(202)
 size_training <- nrow(training)
 training.sampled_2 <- training[sample(size_training, size_training), ]
 
-output <- cold_start_data(training.sampled_2, testing, settings = ctrl_fast)
-output
-gg <- ggplot(data = output)
+result_2 <- cold_start_data(training.sampled_2, testing, settings = ctrl_fast)
+output_2 <- result_2$output
+output_t_2 <- result_2$output_t
+output_2
+
+gg <- ggplot(data = output_2)
   gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
     labs(title="Random Forest through data training size", 
          #subtitle="Drawn from Long Data format", 
@@ -286,17 +386,43 @@ first_training_sample <- training.sampled_2[1:200,]
 ggplot(first_training_sample) + geom_bar(aes(subclass))
 class_distribution <- first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
 ggplot(first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+testing_result_2 <- result$testing_result
+#testing_result
+
+gg <- ggplot(data = output_t_2)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+output_t_aux_2 <- output_t_2
+names(output_t_aux_2) <- c('data_count_t','metric_t')
+output_result_2 <- cbind(output_2,output_t_aux_2)
+gg <- ggplot(data = output_result_2)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
 ```
 
 ### Iteration #3
 ```{r}
-set.seed(2013)
+set.seed(233)
 size_training <- nrow(training)
 training.sampled_3 <- training[sample(size_training, size_training), ]
 
-output <- cold_start_data(training.sampled_3, testing, settings = ctrl_fast)
-output
-gg <- ggplot(data = output)
+result_3 <- cold_start_data(training.sampled_3, testing, settings = ctrl_fast)
+output_3 <- result_3$output
+output_t_3 <- result_3$output_t
+output_3
+
+
+gg <- ggplot(data = output_3)
   gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
     labs(title="Random Forest through data training size", 
          #subtitle="Drawn from Long Data format", 
@@ -307,6 +433,28 @@ first_training_sample <- training.sampled_3[1:200,]
 ggplot(first_training_sample) + geom_bar(aes(subclass))
 class_distribution <- first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
 ggplot(first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+testing_result_3 <- result$testing_result
+#testing_result
+
+gg <- ggplot(data = output_t_3)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+output_t_aux_3 <- output_t_3
+names(output_t_aux_3) <- c('data_count_t','metric_t')
+output_result_3 <- cbind(output_3,output_t_aux_3)
+gg <- ggplot(data = output_result_3)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
 ```
 
 ### Iteration #4
@@ -315,9 +463,12 @@ set.seed(204)
 size_training <- nrow(training)
 training.sampled_4 <- training[sample(size_training, size_training), ]
 
-output <- cold_start_data(training.sampled_4, testing, settings = ctrl_fast)
-output
-gg <- ggplot(data = output)
+result_4 <- cold_start_data(training.sampled_4, testing, settings = ctrl_fast)
+output_4 <- result_4$output
+output_t_4 <- result_4$output_t
+output_4
+
+gg <- ggplot(data = output_4)
   gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
     labs(title="Random Forest through data training size", 
          #subtitle="Drawn from Long Data format", 
@@ -328,6 +479,28 @@ first_training_sample <- training.sampled_4[1:200,]
 ggplot(first_training_sample) + geom_bar(aes(subclass))
 class_distribution <- first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
 ggplot(first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+testing_result_4 <- result$testing_result
+#testing_result
+
+gg <- ggplot(data = output_t_4)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+output_t_aux_4 <- output_t_4
+names(output_t_aux_4) <- c('data_count_t','metric_t')
+output_result_4 <- cbind(output_4,output_t_aux_4)
+gg <- ggplot(data = output_result_4)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
 ```
 
 ### Iteration #5
@@ -336,9 +509,12 @@ set.seed(205)
 size_training <- nrow(training)
 training.sampled_5 <- training[sample(size_training, size_training), ]
 
-output <- cold_start_data(training.sampled_5, testing, settings = ctrl_fast)
-output
-gg <- ggplot(data = output)
+result_5 <- cold_start_data(training.sampled_5, testing, settings = ctrl_fast)
+output_5 <- result_5$output
+output_t_5 <- result_5$output_t
+output_5
+
+gg <- ggplot(data = output_5)
   gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
     labs(title="Random Forest through data training size", 
          #subtitle="Drawn from Long Data format", 
@@ -349,8 +525,293 @@ first_training_sample <- training.sampled_5[1:200,]
 ggplot(first_training_sample) + geom_bar(aes(subclass))
 class_distribution <- first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
 ggplot(first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+testing_result_5 <- result$testing_result
+#testing_result
+
+gg <- ggplot(data = output_t_5)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+output_t_aux_5 <- output_t_5
+names(output_t_aux_5) <- c('data_count_t','metric_t')
+output_result_5 <- cbind(output_5,output_t_aux_5)
+gg <- ggplot(data = output_result_5)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
 ```
 
+### Data training partitions: cold start study (simple Random Forest)
+```{r}
+set.seed(211)
+size_training <- nrow(training)
+rf_training.sampled_1 <- training[sample(size_training, size_training), ]
+rf_result_1 <- cold_start_data_only_rf(rf_training.sampled_1, testing, settings = ctrl_fast)
+
+set.seed(222)
+size_training <- nrow(training)
+rf_training.sampled_2 <- training[sample(size_training, size_training), ]
+rf_result_2 <- cold_start_data_only_rf(rf_training.sampled_2, testing, settings = ctrl_fast)
+
+set.seed(223)
+size_training <- nrow(training)
+rf_training.sampled_3 <- training[sample(size_training, size_training), ]
+rf_result_3 <- cold_start_data_only_rf(rf_training.sampled_3, testing, settings = ctrl_fast)
+
+set.seed(224)
+size_training <- nrow(training)
+rf_training.sampled_4 <- training[sample(size_training, size_training), ]
+rf_result_4 <- cold_start_data_only_rf(rf_training.sampled_4, testing, settings = ctrl_fast)
+
+set.seed(225)
+size_training <- nrow(training)
+rf_training.sampled_5 <- training[sample(size_training, size_training), ]
+rf_result_5 <- cold_start_data_only_rf(rf_training.sampled_5, testing, settings = ctrl_fast)
+
+rf_data.result <- data.frame(rf_result_5$output$data_count)
+rf_data.result_t <- data.frame(rf_result_5$output$data_count)
+for(i in c(1:30)){
+  current_seed <- 226 + i
+  set.seed(current_seed)
+  #size_training <- nrow(training)
+  rf_training.sampled_current <- training[sample(size_training, size_training), ]
+  rf_result_current <- cold_start_data_only_rf(rf_training.sampled_current, testing, settings = ctrl_fast)
+  
+  rf_data.result <- cbind(rf_data.result,rf_result_current$output$metric)
+  rf_data.result_t <- cbind(rf_data.result_t,rf_result_current$output_t$metric)
+}
+ 
+ x <- c('count_of_data')
+ for(i in c(1:30)){
+   x[i+1] <- paste('iteration_',toString(i),sep = "")
+ }
+ x
+ names(rf_data.result) <- x
+ names(rf_data.result_t) <- x
+ rf_data.result
+ rf_data.result_t 
+ 
+ #write.table(rf_data.result,file="random_forest_30_iterations_f1_testing.txt",sep="|", row.names = F)
+ #write.table(rf_data.result_t,file="random_forest_30_iterations_f1_training.txt",sep="|", row.names = F)
+```
+
+### Iteration #1
+```{r}
+rf_output_1 <- rf_result_1$output
+rf_output_t_1 <- rf_result_1$output_t
+rf_output_1
+
+gg <- ggplot(data = rf_output_1)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_first_training_sample <- rf_training.sampled_1[1:200,]
+ggplot(rf_first_training_sample) + geom_bar(aes(subclass))
+rf_class_distribution <- rf_first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
+ggplot(rf_first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#rf_testing_result_1 <- rf_result_1$testing_result
+#testing_result
+
+gg <- ggplot(data = rf_output_t_1)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_output_t_aux_1 <- rf_output_t_1
+names(rf_output_t_aux_1) <- c('data_count_t','metric_t')
+rf_output_result_1 <- cbind(rf_output_1,rf_output_t_aux_1)
+gg <- ggplot(data = rf_output_result_1)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+```
+
+### Iteration #2
+```{r}
+rf_output_2 <- rf_result_2$output
+rf_output_t_2 <- rf_result_2$output_t
+rf_output_2
+
+gg <- ggplot(data = rf_output_2)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_first_training_sample <- rf_training.sampled_2[1:200,]
+ggplot(rf_first_training_sample) + geom_bar(aes(subclass))
+rf_class_distribution <- rf_first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
+ggplot(rf_first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#rf_testing_result_2 <- rf_result_2$testing_result
+#testing_result
+
+gg <- ggplot(data = rf_output_t_2)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_output_t_aux_2 <- rf_output_t_2
+names(rf_output_t_aux_2) <- c('data_count_t','metric_t')
+rf_output_result_2 <- cbind(rf_output_2,rf_output_t_aux_2)
+gg <- ggplot(data = rf_output_result_2)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+```
+
+### Iteration #3
+```{r}
+rf_output_3 <- rf_result_3$output
+rf_output_t_3 <- rf_result_3$output_t
+rf_output_3
+
+gg <- ggplot(data = rf_output_3)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_first_training_sample <- rf_training.sampled_3[1:200,]
+ggplot(rf_first_training_sample) + geom_bar(aes(subclass))
+rf_class_distribution <- rf_first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
+ggplot(rf_first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#rf_testing_result_2 <- rf_result_2$testing_result
+#testing_result
+
+gg <- ggplot(data = rf_output_t_3)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_output_t_aux_3 <- rf_output_t_3
+names(rf_output_t_aux_3) <- c('data_count_t','metric_t')
+rf_output_result_3 <- cbind(rf_output_3,rf_output_t_aux_3)
+gg <- ggplot(data = rf_output_result_3)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+```
+
+### Iteration #4
+```{r}
+rf_output_4 <- rf_result_4$output
+rf_output_t_4 <- rf_result_4$output_t
+rf_output_4
+
+gg <- ggplot(data = rf_output_4)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_first_training_sample <- rf_training.sampled_4[1:200,]
+ggplot(rf_first_training_sample) + geom_bar(aes(subclass))
+rf_class_distribution <- rf_first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
+ggplot(rf_first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#rf_testing_result_2 <- rf_result_2$testing_result
+#testing_result
+
+gg <- ggplot(data = rf_output_t_4)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_output_t_aux_4 <- rf_output_t_4
+names(rf_output_t_aux_4) <- c('data_count_t','metric_t')
+rf_output_result_4 <- cbind(rf_output_4,rf_output_t_aux_4)
+gg <- ggplot(data = rf_output_result_4)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+```
+
+### Iteration #5
+```{r}
+rf_output_5 <- rf_result_5$output
+rf_output_t_5 <- rf_result_5$output_t
+rf_output_5
+
+gg <- ggplot(data = rf_output_5)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_first_training_sample <- rf_training.sampled_5[1:200,]
+ggplot(rf_first_training_sample) + geom_bar(aes(subclass))
+rf_class_distribution <- rf_first_training_sample %>% group_by(class) %>% summarise(n = n()) %>% arrange(desc(n))
+ggplot(rf_first_training_sample) + geom_bar(aes(class)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#rf_testing_result_2 <- rf_result_2$testing_result
+#testing_result
+
+gg <- ggplot(data = rf_output_t_5)
+gg + geom_line(aes(x = data_count, y = metric),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+
+rf_output_t_aux_5 <- rf_output_t_5
+names(rf_output_t_aux_5) <- c('data_count_t','metric_t')
+rf_output_result_5 <- cbind(rf_output_5,rf_output_t_aux_5)
+gg <- ggplot(data = rf_output_result_5)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + geom_line(aes(x = data_count_t, y = metric_t),color = 'blue') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="F1 Score", 
+       color=NULL)
+```
 
 
 ### Studies Samples
@@ -424,7 +885,7 @@ cluster_data
 
 ### Test with only one
 ```{r}
-set.seed(206)
+set.seed(226)
 size_training <- nrow(training)
 training.sampled <- training[sample(size_training, size_training), ]
 
@@ -432,6 +893,8 @@ aux_training_set <- training.sampled[c(1:200), ]#training[sample(size_training, 
 clusters <- kmeans(aux_training_set[,-c(11,12,13,14)],3,nstart = 25)
 aux_training_set_cluster <- cbind(aux_training_set, cluster = clusters$cluster)
 result_vector <- numeric(nrow(testing))
+result_vector_trainning <- numeric(nrow(aux_training_set))
+
 for (j in c(1:3)){
   cluster_data <- aux_training_set_cluster %>% filter(cluster == j)
   new_rfFit <- train(subclass ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
@@ -448,14 +911,27 @@ for (j in c(1:3)){
       result_vector[k] <- result_vector[k] - 1
     }
   }
+  
+  #Trainning predict
+  predsrfprobs_t <- predict(new_rfFit,aux_training_set,type='prob')
+  for (k in c(1:length(result_vector_trainning))){
+    if(predsrfprobs_t$botnet[k] > 0.5){
+      result_vector_trainning[k] <- result_vector_trainning[k] + 1
+    }
+    else{
+      result_vector_trainning[k] <- result_vector_trainning[k] - 1
+    }
+  }
 }
 
 a = ifelse(result_vector > 0,'botnet','normal')
+b <- ifelse(result_vector_trainning > 0,'botnet','normal')
 cm <- confusionMatrix(a,testing$subclass)
-metric <- cm$byClass['F1']
+metric <- cm$byClass['F1']#cm$overall[1]
 metric
-cm$byClass['F1']
-
+cm_t <- confusionMatrix(b,aux_training_set$subclass)
+metric_t <- cm_t$byClass['F1']
+metric_t
 ```
 
 ### Sample examples
@@ -468,3 +944,106 @@ r2 <- sample(9,3)
 a[r2]
 ```
 
+```{r}
+#testing_result
+testing_result.bkp <- testing_result
+testing_result
+names_aux <- foreach(i=1:(nrow(training)/200)) %do% {
+    iteration <- 200 * i
+    paste('size_',toString(iteration),sep = "")
+}
+testing_result_names <- unlist(names_aux, use.names=FALSE)
+testing_result <- testing_result[,c(-1)]
+names(testing_result) <- testing_result_names
+testing_result
+
+testing_aux <- cbind(testing,testing_result)
+testing_aux.bkp2 <- testing_aux
+#write.table(testing_aux,file="testing_cluster_result.txt",sep="|", row.names = F)
+testing_aux
+sums <- rowSums(testing_aux[,-c(1:14)])
+sums
+testing_aux[,-c(1:14)]
+testing_aux <- cbind(testing_aux,sums)
+testing_aux
+testing_aux_result <- testing_aux %>% group_by(class) %>% summarise(n = n(), sums = sum(sums)) %>% arrange(desc(sums))
+testing_aux_result
+
+graph_testing_result <- ggplot(testing_aux_result[-c(1,nrow(testing_aux_result)),])
+graph_testing_result + geom_point(aes(class,sums)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+feature_vectors_cleaned
+
+library(gridExtra)
+pdf("data_output.pdf", height=11, width=8.5)
+grid.table(feature_vectors_cleaned[1:20,])
+dev.off()
+
+testing_result.bkp
+testing_aux.bkp2
+testing_aux_result
+
+rusty_data_result <- testing_aux.bkp2
+rusty_data_result_short <- rusty_data_result[,-c(1:11,14)]
+rusty_data_result_short[,-c(1,2)]
+rusty_data_result_short$pos <- rowSums(rusty_data_result_short[,-c(1,2)] > 0)
+rusty_data_result_short$neg <- rowSums(rusty_data_result_short[,-c(1,2)] < 0)
+rusty_data_result_short_cleaned <- rusty_data_result_short[,c(1,2,46,47)]
+rusty_data_result_short_cleaned
+rusty_data_result_short_cleaned_result <- rusty_data_result_short_cleaned %>% mutate(good = ifelse(subclass == 'normal',neg,pos))
+rusty_data_result_short_cleaned_result <- rusty_data_result_short_cleaned_result %>% mutate(bad = ifelse(subclass == 'normal',pos,neg))
+rusty_data_result_short_cleaned_result %>% group_by(port) %>% summarise(n=n(),good = sum(good),bad = sum(bad)) %>% arrange(desc(n))
+
+data_botnet_port <- rusty_data_result_short_cleaned_result %>% filter(subclass == 'botnet')
+data_normal_port <- rusty_data_result_short_cleaned_result %>% filter(subclass == 'normal')
+data_botnet_port_result <-  data_botnet_port %>% group_by(port) %>% summarise(n=n(),good = sum(good),bad = sum(bad)) %>% arrange(desc(n))
+data_normal_port_result <- data_normal_port %>% group_by(port) %>% summarise(n=n(),good = sum(good),bad = sum(bad)) %>% arrange(desc(n))
+data_botnet_port_result
+data_normal_port_result
+
+ggplot(data = data_botnet_port_result) + 
+  geom_bar(mapping = aes(x = port, fill = clarity))
+
+#write.table(data_botnet_port_result,file="data_botnet_port.txt",sep="|", row.names = F)
+library(reshape2)
+data <- data_botnet_port_result
+data$port <- as.factor(data$port)
+
+melt(data[,c(1,3,4)])
+
+ggplot(melt(data[,c(1,3,4)]))+
+  geom_col(aes(x=port,y=value,fill=variable))+
+  #theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#Making Noisy data (training_noisy: dataset to train with 20% of noisy)
+```{r}
+set.seed(101) 
+training.bkp <- training
+noisy_data <- training
+
+porcent <- nrow(training) / 5
+training_noisy <- generate_data_noisy(noisy_data,porcent)
+nrow(training)
+nrow(training_noisy)
+```
+
+#Robustness Analisys
+```{r}
+set.seed(321)
+partitions <- c(1:15)
+rla_measure_result <- c()
+total <- nrow(training)
+balanced_accuracy <- randomForest_performace(training,testing,'Balanced Accuracy')
+
+for(i in partitions){
+  porcent <- (i*total) / 100
+  training_noisy <- generate_data_noisy(noisy_data,porcent)
+  balanced_accuracy_aux <- randomForest_performace(training_noisy,testing,'Balanced Accuracy')
+  rla_measure_result[i] <- balanced_accuracy_aux
+}
+rla_measure_result
+
+plot(rla_measure_result)
+```

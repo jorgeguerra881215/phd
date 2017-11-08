@@ -10,33 +10,60 @@ suppressMessages(library(stringr))
 suppressMessages(library(caret))
 suppressMessages(library(doMC))
 suppressMessages(library(plotly))
+suppressMessages(library(lubridate))
 ```
 
 #Load Data
 ```{r}
 study_dataset <- read.csv('/home/jguerra/datasets/acm_riskID_study/ctu13_riskID_dataset_random.txt', stringsAsFactors = F, sep = '|')
 study_result <- read.csv('/home/jguerra/datasets/acm_riskID_study/urank_logs.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE)
+names(study_result) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+study_dataset
+study_result
 ```
 
+# Numero de etiquetas por usuarios
 ```{r}
-names(study_result) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
-study_result 
-study_result %>% group_by(session_id) %>% summarise(n=n()) 
+study_result_aux <- study_result
+study_result_aux <- study_result_aux %>% mutate(is_label_action = ifelse(action == 'Label Botnet' | action == 'Label Normal', 1, 0))
+study_result_aux %>% group_by(user_name) %>% summarise(label = sum(is_label_action))
 ```
 
 #Correct Label count
 ```{r}
 label_botnet <- study_result %>% filter(action == 'Label Botnet')
-label_botnet
 label_normal <- study_result %>% filter(action == 'Label Normal')
-label_normal
 label_action <- bind_rows(label_botnet, label_normal)
 label_action <- label_action[,c('connection_id','action')]
 names(label_action) <- c('id','action')
-study_dataset[,c(1,2)]
 label_action_result = merge(x = label_action, y = study_dataset[,c(1,2)], by = "id", all.x = TRUE)
-label_action_result
-ifelse(subclass == 'botnet' & predict > 0.5,'correct','incorrect')
 label_action_result_final = label_action_result %>% mutate(result = ifelse((action == 'Label Botnet' & class == 'botnet') | (action == 'Label Normal' & class == 'normal'),1,0))
-label_action_result_final
+#correct label 
+sum(label_action_result_final$result)
+#incorrect label
+nrow(label_action_result_final) - sum(label_action_result_final$result)
+```
+
+# Correct Normal
+```{r}
+correct_normal <- sum((label_action_result_final %>% filter(class == 'normal'))$result)
+```
+
+# Correct Botnet
+```{r}
+correct_botnet <- sum((label_action_result_final %>% filter(class == 'botnet'))$result)
+```
+
+# Time Analysis
+# Time spend by users
+```{r}
+study_result_time <- study_result[c(2,4)]
+study_result_time <- study_result_time %>% mutate(real_date_time = parse_date_time(date_time, orders="ymd_HMS"))
+study_result_time %>% group_by(user_name) %>% summarise(spend_time = tail(real_date_time, n = 1) - real_date_time[1])
+```
+
+# Elapsed time until the first label 
+```{r}
+study_result
+
 ```
