@@ -1029,6 +1029,19 @@ nrow(training)
 nrow(training_noisy)
 ```
 
+```{r}
+rfFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+                 data = training,
+                 metric="ROC",
+                 method = "rf",
+                 trControl = settings)
+predsrfprobs <- predict(rfFit,testing,type='prob')
+predsrf <- ifelse(predsrfprobs$Botnet >=0.5,'Botnet','Normal')
+cm <- confusionMatrix(predsrf,testing$class)
+result <- cm$byClass[11]
+cm$overall[1]
+```
+
 #Robustness Analisys
 ```{r}
 set.seed(321)
@@ -1046,4 +1059,31 @@ for(i in partitions){
 rla_measure_result
 
 plot(rla_measure_result)
+```
+
+```{r}
+set.seed(322)
+partitions <- seq(2,30,2)
+rla_measure_result_2 <- c()
+total <- nrow(training)
+#balanced_accuracy <- randomForest_performace(training,testing,'Balanced Accuracy')
+
+for(i in partitions){
+  porcent <- (i*total) / 100
+  training_noisy <- generate_data_noisy(noisy_data,porcent)
+  balanced_accuracy_aux <- randomForest_performace(training_noisy,testing,'Balanced Accuracy')
+  rla_measure_result_2[i] <- balanced_accuracy_aux
+}
+rla_measure_result_2
+
+plot(rla_measure_result_2)
+```
+
+```{r}
+index <- seq(2,30,2)
+measure_result <- rla_measure_result_2[index]
+rla_measure_data <- data.frame(index,measure_result)
+names(rla_measure_data) <- c('noise_porcent','rla_measure')
+
+ggplot(rla_measure_data) + geom_point(mapping = aes(x = noise_porcent, y = rla_measure)) + geom_smooth(mapping = aes(x = noise_porcent, y = rla_measure))
 ```
