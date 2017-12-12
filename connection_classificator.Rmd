@@ -268,9 +268,9 @@ ggplot(cbind(svmPredict,class=testing$class),
 
 ### Comparing Models
 ```{r}
-resamps <- resamples(list(rf = rfFit, lr = logicRFit, nv = naiveBayesFit, svm = svmFit))
+resamps <- resamples(list(rf = rfFit,knn = knnFit, lr = logicRFit, nv = naiveBayesFit, svm = svmFit))
 summary(resamps)
-bwplot(resamps)
+bwplot(resamps2)
 diffs <- diff(resamps)
 summary(diffs)
 values=resamps$values
@@ -367,6 +367,7 @@ grid.arrange(h1,h2,h3,h4,ncol=2,nrow=2)
 
 #### difference heatmaps
 ```{r heatmap diff}
+library(knitr)
 mdf<-as.data.frame(rf_m - knn_m)
 mdf<-cbind(mdf,id=seq(1:61))
 mdf<-reshape2::melt(mdf,id.vars=c("id"))
@@ -655,10 +656,10 @@ g3
 # devtools::install_github("hrbrmstr/ggalt")
 
 # Data frame of principal components ----------------------
-df_pc <- data.frame(pca_mod$x, Species=iris$Species)  # dataframe of principal components
-df_pc_vir <- df_pc[df_pc$Species == "virginica", ]  # df for 'virginica'
-df_pc_set <- df_pc[df_pc$Species == "setosa", ]  # df for 'setosa'
-df_pc_ver <- df_pc[df_pc$Species == "versicolor", ]  # df for 'versicolor'
+#df_pc <- data.frame(pca_mod$x, Species=iris$Species)  # dataframe of principal components
+#df_pc_vir <- df_pc[df_pc$Species == "virginica", ]  # df for 'virginica'
+#df_pc_set <- df_pc[df_pc$Species == "setosa", ]  # df for 'setosa'
+#df_pc_ver <- df_pc[df_pc$Species == "versicolor", ]  # df for 'versicolor'
  
 # Plot ----------------------------------------------------
 ggplot(df_pc, aes(PC1, PC2, col=Species)) + 

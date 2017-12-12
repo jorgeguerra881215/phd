@@ -1,0 +1,8 @@
+name: Publish Document
+title:
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/290724/584b8026ccb740fc8ddf82be2ed994e7
+bundleId: https://api.rpubs.com/api/v1/document/290724/584b8026ccb740fc8ddf82be2ed994e7
+url: http://rpubs.com/jguerra/290724
+when: 1499998232.93744

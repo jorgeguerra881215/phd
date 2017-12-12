@@ -1,0 +1,112 @@
+---
+title: "Working with directed graph"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+suppressMessages(library(GGally))
+suppressMessages(library(network))
+suppressMessages(library(sna))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(intergraph))
+suppressMessages(library(ggplot2))
+```
+
+```{r}
+#Random graph
+net <- rgraph(10, mode = "graph", tprob = 0.5)
+net <- network(net, directed = FALSE)
+
+#Vertex name
+network.vertex.names(net) <- letters[1:10]
+
+ggnet2(net, size = 12, label = TRUE, label.size = 5)
+```
+
+```{r}
+# weighted adjacency matrix
+bip = data.frame(event1 = c(1, 2, 1, 0),
+                 event2 = c(0, 0, 3, 0),
+                 event3 = c(1, 1, 0, 4),
+                 row.names = letters[1:4])
+
+bip = network(bip,
+              matrix.type = "bipartite",
+              ignore.eval = FALSE,
+              names.eval = "weights")
+col = c("actor" = "grey", "event" = "gold")
+set.edge.attribute(bip, "color", ifelse(bip %e% "weights" > 1, "black", "grey75"))
+ggnet2(bip, color = "mode", palette = col, edge.size = "weights", edge.color = "color")
+```
+
+```{r}
+ctu13_bip = data.frame(A = c(2280, -43, -171, -213, 3),
+                       B = c(-481, -1518, -1023, -700, -27),
+                       C = c(-1, -5, -1, 0, 0),
+                       D = c(-4521, 1180, 1760, 7, -1),
+                       E = c(-1374, -983, -39, -35, -2),
+                       F = c(466, -466, -58, -1, 8),
+                       G = c(337, 0, 0, 1, 0),
+                       H = c(1313, -1093, -14, -129, -8),
+                       I = c(538, -868, -362, -74, 68),
+                       R = c(22826, 6598, -202, -629, -110),
+                       S = c(-3214, -3349, -2239, -2538, -291),
+                       T = c(-1, -12, -4, -10, 0),
+                       U = c(37217, 32137, 3871, 318, 4),
+                       V = c(-150, -507, -32, -71, -42),
+                       W = c(4200, 1123, 92, 261, 19),
+                       X = c(1520, 250, 129, 79, 19),
+                       Y = c(2887, -891, 1876, -718, -22),
+                       Z = c(2726, 32, -191, 452, 89),
+                       a = c(2207, 14, -1, -46, 8),
+                       b = c(432, -679, -1802, -333, -5),
+                       c = c(1, 0, -2, 0, 0),
+                       d = c(-689, 3855, 484, 3, 0),
+                       e = c(-20269, -358, -66, -13, 4),
+                       f = c(169, -100, -66, -6, 313),
+                       g = c(320, 241, 0, 0, 0),
+                       h = c(468, 12388, 18, 895, 18),
+                       i = c(417, -181, -561, -335, 528),
+                       r = c(8002, -1004, -796, -1057, -24),
+                       s = c(-2720, -6228, -4999, -3481, -222),
+                       t = c(-2, -19, -8, -8, -2),
+                       u = c(-31225, 16276, 8403, 227, -16),
+                       v = c(-3283, -2438, -141, -166, -36),
+                       w = c(489, -933, -165, -13, -27),
+                       x = c(870, 13, -14, -1, 1),
+                       y = c(30, -2447, -383, -119, -36),
+                       z = c(-260, -1597, -829, -279, 91),
+                       row.names = c('.','-','+','*','0'))
+ctu13_bip['.','A']
+min_value <- min(ctu13_bip)
+ctu13_bip_aux <- (ctu13_bip - min_value) / 10000
+ctu13_bip_graph = network(ctu13_bip_aux,
+              matrix.type = "bipartite",
+              ignore.eval = FALSE,
+              names.eval = "weights",
+              directed = TRUE)
+
+# set colors for each mode
+col = c("actor" = "grey", "event" = "gold")
+#ggnet2(ctu13_bip_graph, color = "mode", palette = col, label = TRUE, edge.size = "weights")
+
+set.edge.attribute(ctu13_bip_graph, "color", ifelse(ctu13_bip_graph %e% "weights" > ((-min_value)/10000), "red", "green"))
+ggnet2(ctu13_bip_graph, color = "mode", palette = col, label = TRUE, edge.color = "color", arrow.size = 12, arrow.gap = 0.025)
+
+ggnet2(ctu13_bip_graph, color = "mode", palette = col, label = TRUE, edge.color = "color", edge.size = 'weights')
+
+ggnet2(network(rgraph(10, tprob = 0.25), directed = TRUE), arrow.size = 12, arrow.gap = 0.025)
+
+```
+
+```{r}
+cxn <- '44.U*U.R+U*U.U,R.U.R,R.U*r*u*U.R.R,R.R*u*R.U.R,R.R*u*U.R.R,R.R*u*U.R.R,R.U,U.R*u*U.U.R,R.R*u*R.U.R,R.R*u*R.U.R,R.R*u+U.U*U.R.R,R.U*U.R*u*U.R.R,R.'
+cxn_split <- strsplit(cxn, "")[[1]]
+for (letter in cxn_split) {
+  
+}
+```

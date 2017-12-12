@@ -296,13 +296,13 @@ generate_data_noisy <- function(dataset, porcent){
 }
 
 get_ELA_measure <- function(A0, Ax){
-  RLA <- (A0 - Ax) / A0
-  FA0 <- (100 - A0) / A0
+  RLA <- abs(A0 - Ax) / A0
+  FA0 <- (1 - A0) / A0
   ELA <- RLA + FA0
   return(ELA)
 }
 
-randomForest_performace <- function(training_data, testing_data, metric){
+randomForest_performace <- function(training_data, testing_data){
   rfFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
                  data = training_data,
                  metric="ROC",
@@ -311,9 +311,31 @@ randomForest_performace <- function(training_data, testing_data, metric){
   predsrfprobs <- predict(rfFit,testing_data,type='prob')
   predsrf <- ifelse(predsrfprobs$Botnet >=0.5,'Botnet','Normal')
   cm <- confusionMatrix(predsrf,testing_data$class)
-  result <- cm$byClass[metric]
+  result <- cm$byClass
   return(result)
 }
+
+cosine_similarity <- function(vector, matrix){
+  result <- c()
+  for(i in c(1:nrow(matrix))){
+    v1 <- as.numeric(vector)
+    v2 <- as.numeric(as.vector(as.matrix(matrix[i,])))
+    result[i] = v1 %*% v2 / sqrt(v1 %*% v1 * v2 %*% v2)
+  }
+  return(result)
+}
+
+prediction_by_similarity <- function(train_element, prediction_element,number_element){
+  numeric_train_element <- train_element[,1:10] #Getting characteristic numeric vector
+  similarity_result <- cosine_similarity(prediction_element[1:10],numeric_train_element)
+  train_element$similarity_result <- similarity_result
+  train_element_order_by_similarity <- train_element[order(train_element$similarity_result, decreasing = T),]
+  train_element_order_by_similarity <- train_element_order_by_similarity[1:number_element,]
+  aux <- train_element_order_by_similarity %>% group_by(class) %>% summarise(n=n()) %>% arrange(desc(n))
+  result <- aux[1,1]
+  return(result)
+}
+
 training
 testing
 ```
@@ -1042,48 +1064,165 @@ result <- cm$byClass[11]
 cm$overall[1]
 ```
 
-#Robustness Analisys
+#Robustness Analisys(one simple iteration)
 ```{r}
 set.seed(321)
-partitions <- c(1:15)
-rla_measure_result <- c()
+partitions <- seq(2,90,2)
+rf_measures_result <- c()
+ela_measures_result <- c()
 total <- nrow(training)
-balanced_accuracy <- randomForest_performace(training,testing,'Balanced Accuracy')
+balanced_accuracy <- randomForest_performace(training,testing)
 
 for(i in partitions){
   porcent <- (i*total) / 100
   training_noisy <- generate_data_noisy(noisy_data,porcent)
-  balanced_accuracy_aux <- randomForest_performace(training_noisy,testing,'Balanced Accuracy')
-  rla_measure_result[i] <- balanced_accuracy_aux
+  balanced_accuracy_aux <- randomForest_performace(training_noisy,testing)
+  rf_measures_result[i] <- balanced_accuracy_aux
 }
-rla_measure_result
-
-plot(rla_measure_result)
-```
-
-```{r}
-set.seed(322)
-partitions <- seq(2,30,2)
-rla_measure_result_2 <- c()
-total <- nrow(training)
-#balanced_accuracy <- randomForest_performace(training,testing,'Balanced Accuracy')
 
 for(i in partitions){
-  porcent <- (i*total) / 100
-  training_noisy <- generate_data_noisy(noisy_data,porcent)
-  balanced_accuracy_aux <- randomForest_performace(training_noisy,testing,'Balanced Accuracy')
-  rla_measure_result_2[i] <- balanced_accuracy_aux
+  balanced_accuracy_noisy <- rf_measures_result[i]
+  ela_measures_result[i] <- get_ELA_measure(A0 = balanced_accuracy['Balanced Accuracy'], Ax = balanced_accuracy_noisy)
 }
-rla_measure_result_2
 
-plot(rla_measure_result_2)
+plot(ela_measures_result)
+ plot(rf_measures_result)
 ```
 
+#Robustness Analisys: ploting accuracy
 ```{r}
-index <- seq(2,30,2)
-measure_result <- rla_measure_result_2[index]
+index <- seq(2,90,2)
+measure_result <- rf_measures_result[index]
 rla_measure_data <- data.frame(index,measure_result)
-names(rla_measure_data) <- c('noise_porcent','rla_measure')
+names(rla_measure_data) <- c('noise_porcent','balanced_accuracy')
 
-ggplot(rla_measure_data) + geom_point(mapping = aes(x = noise_porcent, y = rla_measure)) + geom_smooth(mapping = aes(x = noise_porcent, y = rla_measure))
+g<-ggplot(rla_measure_data) + geom_point(mapping = aes(x = noise_porcent, y = balanced_accuracy)) + geom_smooth(mapping = aes(x = noise_porcent, y = balanced_accuracy))
+ggplotly(g)
+```
+
+#Robustness Analisys: ploting ELA measure
+```{r}
+index <- seq(2,90,2)
+measure_result <- ela_measures_result[index]
+ela_measure_data <- data.frame(index,measure_result)
+names(ela_measure_data) <- c('noise_porcent','ela_measure')
+
+ggplot(ela_measure_data) + geom_point(mapping = aes(x = noise_porcent, y = ela_measure)) + geom_smooth(mapping = aes(x = noise_porcent, y = ela_measure))
+```
+
+#Robustness Analisys(30 iterations)
+```{r}
+set.seed(331)
+partitions <- seq(2,90,2)
+
+total <- nrow(training)
+result_rf_accuracy <- data.frame('count_of_data' = partitions)
+result_ela_measure <- data.frame('count_of_data' = partitions)
+write.table(result_rf_accuracy,file="test_result_rf_accuracy.txt",sep="|", row.names = F)
+write.table(result_ela_measure,file="test_result_ela_measure.txt",sep="|", row.names = F)
+for (j in c(1:30)){
+  rf_measures_result <- c()
+  ela_measures_result <- c()
+  #Calculando RF performance con variaciones en el porciento de ruido en training
+  for(i in partitions){
+    porcent <- (i*total) / 100
+    training_noisy <- generate_data_noisy(noisy_data,porcent)
+    balanced_accuracy_aux <- randomForest_performace(training_noisy,testing)
+    rf_measures_result[i] <- balanced_accuracy_aux
+  }
+  #Calculando ELA measure
+  for(i in partitions){
+    balanced_accuracy_noisy <- rf_measures_result[i]
+    ela_measures_result[i] <- get_ELA_measure(A0 = balanced_accuracy['Balanced Accuracy'], Ax = balanced_accuracy_noisy)
+  }
+  
+  #Quedandome con las posiciones pares que son las que tienen los valores
+  ela_measures_result <- ela_measures_result[partitions]
+  rf_measures_result <- rf_measures_result[partitions]
+  
+  colum_name <- paste('iteration_',toString(j),sep = "")
+  result_rf_accuracy <- cbind(result_rf_accuracy, colum_name = rf_measures_result)
+  result_ela_measure <- cbind(result_ela_measure, colum_name = ela_measures_result)
+  
+  write.table(result_rf_accuracy,file="test_result_rf_accuracy.txt",sep="|", row.names = F)
+  write.table(result_ela_measure,file="test_result_ela_measure.txt",sep="|", row.names = F)
+}
+
+result_ela_measure
+result_rf_accuracy
+
+```
+
+```{r, fig.height=8}
+x <- c('nosisy_porcent')
+for(i in c(1:30)){
+ x[i+1] <- paste('iteration_',toString(i),sep = "")
+}
+x
+result_ela_measure.bkp <- result_ela_measure
+result_rf_accuracy.bkp <- result_rf_accuracy
+names(result_ela_measure) <- x
+names(result_rf_accuracy) <- x
+
+result_rf_accuracy
+ggplot(result_rf_accuracy %>% gather("iteration","value",2:31))+
+  geom_boxplot(aes(x=as.factor(nosisy_porcent),y=value))+
+  stat_summary(fun.y= "mean",
+                 aes(x=as.factor(nosisy_porcent),y=value,color=value))
+  #scale_color_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0.5)
+```
+
+#Cosine Similarity
+```{r}
+training
+testing
+prediction_vector <- testing[1,]
+prediction_vector <- as.vector(as.matrix(prediction_vector))
+result <- prediction_by_similarity(training,prediction_vector,100)
+result
+
+result <- c()
+for(i in 1:nrow(testing)){
+  prediction_vector <- testing[i,]
+  prediction_vector <- as.vector(as.matrix(prediction_vector))
+  result[i] <- prediction_by_similarity(training,prediction_vector,100)
+}
+vector_result <- unlist(result)
+cm <- confusionMatrix(vector_result,testing$class)
+cm
+```
+
+####################### 
+```{r}
+cs_data.result <- data.frame(rf_result_5$output$data_count)
+#for(i in c(1:1)){
+  current_seed <- 226 #+ i
+  set.seed(current_seed)
+  
+  size_training <- nrow(training)
+  cs_training.sampled_current <- training[sample(size_training, size_training), ]
+  split_size_training = size_training / 200
+  metric <- numeric(split_size_training)
+  for(j in 1:split_size_training){
+    count <- 200 * j
+    aux_training_set <- cs_training.sampled_current[c(1:count), ]
+    result <- c()
+    for(k in 1:nrow(testing)){
+      prediction_vector <- testing[k,]
+      prediction_vector <- as.vector(as.matrix(prediction_vector))
+      output_result <- prediction_by_similarity(aux_training_set,prediction_vector,101)
+      result[k] <- output_result
+    }
+    vector_result <- unlist(result)
+    cm <- confusionMatrix(vector_result,testing$class)
+    metric[j] <- cm$byClass['F1']
+    
+  }
+  cs_data.result <- cbind(cs_data.result, metric)
+#}
+cs_data.result
+```
+
+```{r}
+
 ```

@@ -1,0 +1,296 @@
+---
+title: "CAI's experiments"
+output: html_notebook
+---
+
+### Library Environment
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(stringr))
+suppressMessages(library(ISLR))
+suppressMessages(library(caret))
+suppressMessages(library(doMC))
+suppressMessages(library(plotly))
+suppressMessages(library(stringr))
+registerDoMC(cores=4)
+```
+
+### Load and processing data
+```{r}
+myData = read.csv('./datasets/data_all_result.txt', stringsAsFactors = F, sep = ' ')
+#Create data backup
+myData.bkup <- myData
+#Create new column: length of model, and number of periodicity, duration and size characteristic in the model.
+myData = myData %>% mutate(letter_count = nchar(State))
+#Periodicity
+myData = myData %>% mutate(strong_p = str_count(State,'[a-i]'))
+myData = myData %>% mutate(weak_p = str_count(State,'[A-I]'))
+myData = myData %>% mutate(weak_np = str_count(State,'[r-z]'))
+myData = myData %>% mutate(strong_np = str_count(State,'[R-Z]'))
+#Duration
+myData = myData %>% mutate(duration_s = str_count(State,'(a|A|r|R|1|d|D|u|U|4|g|G|x|X|7)'))
+myData = myData %>% mutate(duration_m = str_count(State,'(b|B|s|S|2|e|E|v|V|5|h|H|y|Y|8)'))
+myData = myData %>% mutate(duration_l = str_count(State,'(c|C|t|T|3|f|F|w|W|6|i|I|z|Z|9)'))
+#Size
+myData = myData %>% mutate(size_s = str_count(State,'[a-c]') + str_count(State,'[A-C]') + str_count(State,'[r-t]') + str_count(State,'[R-T]') + str_count(State,'[1-3]'))
+myData = myData %>% mutate(size_m = str_count(State,'[d-f]') + str_count(State,'[D-F]') + str_count(State,'[u-w]') + str_count(State,'[U-W]') + str_count(State,'[4-6]'))
+myData = myData %>% mutate(size_l = str_count(State,'[g-i]') + str_count(State,'[G-I]') + str_count(State,'[x-z]') + str_count(State,'[X-Z]') + str_count(State,'[7-9]'))
+
+#Remove from LabelName unnecessary characters (ej: V42, -17)
+myData <- myData %>% mutate(LabelName = gsub('V[0-9]+-','',LabelName))
+myData <- myData %>% mutate(LabelName = gsub('-[0-9]+','',LabelName))
+myData <- myData %>% mutate(LabelName = gsub('CC[0-9]+-','CC-',LabelName))
+
+#Keep only connection with more than 3 symbols
+myData <- myData %>% filter(letter_count > 3)
+
+#Periodicity %
+myData <- myData %>% mutate(strong_p = (strong_p / letter_count))
+myData <- myData %>% mutate(weak_p = (weak_p / letter_count))
+myData <- myData %>% mutate(strong_np = (strong_np / letter_count))
+myData <- myData %>% mutate(weak_np = (weak_np / letter_count))
+#Duration %
+myData <- myData %>% mutate(duration_s = (duration_s / letter_count))
+myData <- myData %>% mutate(duration_m = (duration_m / letter_count))
+myData <- myData %>% mutate(duration_l = (duration_l / letter_count))
+#Size %
+myData <- myData %>% mutate(size_s = (size_s / letter_count))
+myData <- myData %>% mutate(size_m = (size_m / letter_count))
+myData <- myData %>% mutate(size_l = (size_l / letter_count))
+
+#head(myData)
+myData[1:20,]
+
+#Making feature vectors
+feature_vectors = myData[,c('strong_p','weak_p','weak_np','strong_np','duration_s','duration_m','duration_l','size_s','size_m','size_l','letter_count','Label','LabelName','port','proto')]
+names(feature_vectors) = c("sp","wp","wnp","snp","ds","dm","dl","ss","sm","sl","length","class","subclass","port","proto")
+feature_vectors$class = factor(feature_vectors$class)
+feature_vectors$subclass = factor(feature_vectors$subclass)
+feature_vectors$proto = factor(feature_vectors$proto)
+```
+
+### Create training set and testset
+```{r}
+set.seed(200)
+trainIndex <- createDataPartition(feature_vectors$class, p=0.70, list=FALSE)
+data_training <- feature_vectors[ trainIndex,]
+data_testing <- feature_vectors[-trainIndex,]
+
+#data_train = data_train %>% filter(length>5)
+train <- upSample(x = data_training,  y = data_training$class, yname="class")
+
+training <- train[,-c(11,12)]
+testing <- data_testing[,-c(11)]
+training
+testing
+
+#nrow(training)
+```
+
+### Training configuration
+```{r}
+ctrl_fast <- trainControl(method="cv", 
+                     repeats=2,
+                     number=10, 
+                     summaryFunction=twoClassSummary,
+                     verboseIter=T,
+                     classProbs=TRUE,
+                     allowParallel = TRUE)  
+```
+
+### Experiment 1
+## Creation of cluster and k parameters analysis
+```{r}
+library(factoextra)
+library(cluster)
+library(NbClust)
+feature_vector_training = training[,-c(11,12,13,14)]
+# K-means clustering
+set.seed(123)
+km.res <- kmeans(feature_vector_training, 3, nstart = 25)
+#km.res <- kmeans(feature_vector_training, 8, nstart = 25)
+# k-means group number of each observation
+km.res$cluster
+
+# Visualize k-means clusters
+fviz_cluster(km.res, data = feature_vector_training, geom = "point",
+             stand = FALSE, ellipse.type = "norm")
+```
+### Elbow analysis
+```{r}
+set.seed(123)
+# Compute and plot wss for k = 2 to k = 15
+k.max <- 15 # Maximal number of clusters
+data <- feature_vector_training
+wss <- sapply(1:k.max, 
+        function(k){kmeans(data, k, nstart=10 )$tot.withinss})
+plot(1:k.max, wss,
+       type="b", pch = 19, frame = FALSE, 
+       xlab="Number of clusters K",
+       ylab="Total within-clusters sum of squares")
+abline(v = 3, lty =2)
+```
+## Silhouette analysis
+```{r}
+k.max <- 15
+data <- feature_vector_training
+sil <- rep(0, k.max)
+# Compute the average silhouette width for 
+# k = 2 to k = 15
+for(i in 2:k.max){
+  km.res <- kmeans(data, centers = i, nstart = 25)
+  ss <- silhouette(km.res$cluster, dist(data))
+  sil[i] <- mean(ss[, 3])
+}
+# Plot the  average silhouette width
+plot(1:k.max, sil, type = "b", pch = 19, 
+     frame = FALSE, xlab = "Number of clusters k")
+abline(v = which.max(sil), lty = 2)
+```
+### Data training partitions: cold start study
+```{r}
+set.seed(200)
+library(doParallel)
+cl <- makeCluster(2)
+registerDoParallel(cl)
+size_training <- nrow(training)
+split_size_training = size_training / 200
+count_random <- foreach(i=1:split_size_training) %dopar% {
+  200 * i
+}
+count_random
+training.sampled <- training[sample(size_training, size_training), ]
+metric <- foreach(i=1:split_size_training) %do% {
+  #library(caret)
+  count <- 200 * i
+  aux_training_set <- training.sampled[c(1:count), ]#training[sample(size_training, count), ]
+  clusters <- kmeans(aux_training_set[,-c(11,12,13,14)],3,nstart = 25)
+  aux_training_set_cluster <- cbind(aux_training_set, cluster = clusters$cluster)
+  result_vector <- numeric(nrow(testing))
+  for (j in c(1:3)){
+    cluster_data <- filter(aux_training_set_cluster, cluster == j)
+    new_rfFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+               data = cluster_data,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+    predsrfprobs <- predict(new_rfFit,testing,type='prob')
+    for (k in c(1:length(result_vector))){
+      if(predsrfprobs$Botnet[k] > 0.5){
+        result_vector[k] <- result_vector[k] + 1
+      }
+      else{
+        result_vector[k] <- result_vector[k] - 1
+      }
+    }
+  }
+  a = ifelse(result_vector > 0,'Botnet','Normal')
+  cm <- confusionMatrix(a,testing$class)
+  metric <- cm$byClass['F1']#cm$overall[1]
+  metric
+}
+
+output <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric))
+output
+gg <- ggplot(data = output)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="Accuracy", 
+       color=NULL)
+cluster_data
+```
+
+### part 2
+```{r}
+set.seed(205)
+library(doParallel)
+cl <- makeCluster(2)
+registerDoParallel(cl)
+size_training <- nrow(training)
+split_size_training = size_training / 200
+count_random <- foreach(i=1:split_size_training) %dopar% {
+  200 * i
+}
+count_random
+training.sampled <- training[sample(size_training, size_training), ]
+metric <- foreach(i=1:split_size_training) %dopar% {
+  #library(caret)
+  count <- 200 * i
+  aux_training_set <- training.sampled[c(1:count), ]#training[sample(size_training, count), ]
+  clusters <- kmeans(aux_training_set[,-c(11,12,13,14)],3,nstart = 25)
+  aux_training_set_cluster <- cbind(aux_training_set, cluster = clusters$cluster)
+  result_vector <- numeric(nrow(testing))
+  for (j in c(1:3)){
+    cluster_data <- filter(aux_training_set_cluster, cluster == j)
+    new_rfFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+               data = cluster_data,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+    predsrfprobs <- predict(new_rfFit,testing,type='prob')
+    for (k in c(1:length(result_vector))){
+      if(predsrfprobs$Botnet[k] > 0.5){
+        result_vector[k] <- result_vector[k] + 1
+      }
+      else{
+        result_vector[k] <- result_vector[k] - 1
+      }
+    }
+  }
+  a = ifelse(result_vector > 0,'Botnet','Normal')
+  cm <- confusionMatrix(a,testing$class)
+  metric <- cm$byClass['F1']#cm$overall[1]
+  metric
+}
+
+output <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric))
+output
+gg <- ggplot(data = output)
+gg + geom_line(aes(x = data_count, y = metric),color = 'red') + 
+  labs(title="Random Forest through data training size", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       y="Accuracy", 
+       color=NULL)
+cluster_data
+```
+
+
+### Test with only one
+```{r}
+set.seed(205)
+size_training <- nrow(training)
+training.sampled <- training[sample(size_training, size_training), ]
+
+aux_training_set <- training.sampled[c(1:200), ]#training[sample(size_training, 200), ]
+clusters <- kmeans(aux_training_set[,-c(11,12,13,14)],3,nstart = 25)
+aux_training_set_cluster <- cbind(aux_training_set, cluster = clusters$cluster)
+result_vector <- numeric(nrow(testing))
+for (j in c(1:3)){
+  cluster_data <- aux_training_set_cluster %>% filter(cluster == j)
+  new_rfFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+               data = cluster_data,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+  predsrfprobs <- predict(new_rfFit,testing,type='prob')
+  for (k in c(1:length(result_vector))){
+    if(predsrfprobs$Botnet[k] > 0.5){
+      result_vector[k] <- result_vector[k] + 1
+    }
+    else{
+      result_vector[k] <- result_vector[k] - 1
+    }
+  }
+}
+
+a = ifelse(result_vector > 0,'Botnet','Normal')
+cm <- confusionMatrix(a,testing$class)
+metric <- cm$byClass['F1']
+metric
+cm$byClass['F1']
+
+```
+

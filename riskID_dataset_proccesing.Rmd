@@ -1,0 +1,117 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### Library Environment
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(stringr))
+suppressMessages(library(caret))
+suppressMessages(library(doMC))
+suppressMessages(library(plotly))
+suppressMessages(library(stringr))
+registerDoMC(cores=4)
+```
+
+### Load and processing data ctu13 cleaned
+```{r}
+myData_cleaned <- read.csv('/home/jguerra/datasets/ctu13.labeled.cleaned', stringsAsFactors = F, sep = '|')
+myData_cleaned.bkp = myData_cleaned
+myData_cleaned
+
+#Periodicity
+myData_cleaned = myData_cleaned %>% mutate(strong_p = str_count(State,'[a-i]'))
+myData_cleaned = myData_cleaned %>% mutate(weak_p = str_count(State,'[A-I]'))
+myData_cleaned = myData_cleaned %>% mutate(weak_np = str_count(State,'[r-z]'))
+myData_cleaned = myData_cleaned %>% mutate(strong_np = str_count(State,'[R-Z]'))
+#Duration
+myData_cleaned = myData_cleaned %>% mutate(duration_s = str_count(State,'(a|A|r|R|1|d|D|u|U|4|g|G|x|X|7)'))
+myData_cleaned = myData_cleaned %>% mutate(duration_m = str_count(State,'(b|B|s|S|2|e|E|v|V|5|h|H|y|Y|8)'))
+myData_cleaned = myData_cleaned %>% mutate(duration_l = str_count(State,'(c|C|t|T|3|f|F|w|W|6|i|I|z|Z|9)'))
+#Size
+myData_cleaned = myData_cleaned %>% mutate(size_s = str_count(State,'[a-c]') + str_count(State,'[A-C]') + str_count(State,'[r-t]') + str_count(State,'[R-T]') + str_count(State,'[1-3]'))
+myData_cleaned = myData_cleaned %>% mutate(size_m = str_count(State,'[d-f]') + str_count(State,'[D-F]') + str_count(State,'[u-w]') + str_count(State,'[U-W]') + str_count(State,'[4-6]'))
+myData_cleaned = myData_cleaned %>% mutate(size_l = str_count(State,'[g-i]') + str_count(State,'[G-I]') + str_count(State,'[x-z]') + str_count(State,'[X-Z]') + str_count(State,'[7-9]'))
+
+#Periodicity %
+myData_cleaned <- myData_cleaned %>% mutate(strong_p = (strong_p / modelsize))
+myData_cleaned <- myData_cleaned %>% mutate(weak_p = (weak_p / modelsize))
+myData_cleaned <- myData_cleaned %>% mutate(strong_np = (strong_np / modelsize))
+myData_cleaned <- myData_cleaned %>% mutate(weak_np = (weak_np / modelsize))
+#Duration %
+myData_cleaned <- myData_cleaned %>% mutate(duration_s = (duration_s / modelsize))
+myData_cleaned <- myData_cleaned %>% mutate(duration_m = (duration_m / modelsize))
+myData_cleaned <- myData_cleaned %>% mutate(duration_l = (duration_l / modelsize))
+#Size %
+myData_cleaned <- myData_cleaned %>% mutate(size_s = (size_s / modelsize))
+myData_cleaned <- myData_cleaned %>% mutate(size_m = (size_m / modelsize))
+myData_cleaned <- myData_cleaned %>% mutate(size_l = (size_l / modelsize))
+
+#Making feature vectors
+feature_vectors_cleaned = myData_cleaned[,c('strong_p','weak_p','weak_np','strong_np','duration_s','duration_m','duration_l','size_s','size_m','size_l','modelsize','label','class','port','proto')]
+names(feature_vectors_cleaned) = c("sp","wp","wnp","snp","ds","dm","dl","ss","sm","sl","modelsize","class","subclass","port","proto")
+feature_vectors_cleaned$class = factor(feature_vectors_cleaned$class)
+feature_vectors_cleaned$subclass = factor(feature_vectors_cleaned$subclass)
+feature_vectors_cleaned$proto = factor(feature_vectors_cleaned$proto)
+
+feature_vectors_cleaned
+myData_cleaned.bkp
+```
+
+### Create clusters
+```{r}
+datset_size <- nrow(feature_vectors_cleaned)
+ncluster <- 3
+aux_vector_sampled <- feature_vectors_cleaned[,1:10]
+clusters <- kmeans(aux_vector_sampled,ncluster,nstart = 1) #create 3 clusters
+vector_result <- cbind(myData_cleaned.bkp, clusterid = clusters$cluster) #Adding clusterid
+vector_result <- vector_result %>% mutate(connection_id = paste(src,dst,port,proto, sep='-'))
+vector_result$id <- seq(1,datset_size) #adding ID
+vector_result_to_export <- vector_result[,c("id","class","State","connection_id","clusterid")]
+vector_result_to_export
+
+feature_vectors_cleaned_export_version <- cbind(feature_vectors_cleaned, clusterid = clusters$cluster)
+feature_vectors_cleaned_export_version <- feature_vectors_cleaned_export_version[,c(16,1:15,17)]
+#write.table(feature_vectors_cleaned_export_version,file="ctu13_riskID_dataset_feature_vector.txt",sep="|", row.names = F)
+```
+
+```{r}
+set.seed(115)
+training_size <- 2000
+feature_vectors_cleaned$id <- seq(1,datset_size) #adding ID
+aux_data_vector_feature <- cbind(feature_vectors_cleaned, clusterid = clusters$cluster) #Adding clusterid
+
+aux_data_vector_feature <- aux_data_vector_feature[sample(size_features_vector, size_features_vector), ] #shuffle
+
+trainset<-aux_data_vector_feature[1:training_size,]
+testset<-aux_data_vector_feature[(training_size + 1):nrow(aux_data_vector_feature),]
+new_rfFit <- train(subclass ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl+clusterid+proto, #clusterid+proto
+               data = trainset,
+               metric="ROC",
+               method = "rf",
+               trControl = ctrl_fast)
+#Testing predict
+predsrfprobs <- predict(new_rfFit,testset,type='prob')
+
+```
+
+```{r}
+predsrfprobs$botnet
+a <- predsrfprobs$botnet
+length(a)
+b <- data.frame(id=testset$id, prob = a)
+result <- merge(vector_result_to_export,b,by = "id",all = T)
+result <- result[,c(1,2,4,3,5,6)]
+result
+result_more_than_ten <- result %>% filter(nchar(State) >= 10)
+result_more_than_5 <- result %>% filter(nchar(State) > 4)
+result %>% filter(nchar(State) < 10)
+trainset
+random_result <- result_more_than_5[sample(nrow(result_more_than_5),1000),]
+random_result %>% group_by(prob) %>% summarise(n = n()) %>% arrange(desc(n))
+result %>% group_by(prob) %>% summarise(n = n()) %>% arrange(desc(n))
+
+#write.table(result,file="ctu13_riskID_dataset.txt",sep="|", row.names = F)
+write.table(random_result,file="ctu13_riskID_dataset_random_6.txt",sep="|", row.names = F)
+```
