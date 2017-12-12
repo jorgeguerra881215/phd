@@ -315,6 +315,17 @@ randomForest_performace <- function(training_data, testing_data){
   return(result)
 }
 
+get_randomForest_performace_vector <- function(training_data, testing_data){
+  rfFit <- train(class ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+                 data = training_data,
+                 metric="ROC",
+                 method = "rf",
+                 trControl = settings)
+  predsrfprobs <- predict(rfFit,testing_data,type='prob')
+  predsrf <- ifelse(predsrfprobs$Botnet >=0.5,'Botnet','Normal')
+  return(predsrf)
+}
+
 cosine_similarity <- function(vector, matrix){
   result <- c()
   for(i in c(1:nrow(matrix))){
@@ -1089,6 +1100,30 @@ plot(ela_measures_result)
  plot(rf_measures_result)
 ```
 
+#Robustness Analisys by port(One simple Iteration)
+```{r}
+set.seed(321)
+partitions <- seq(2,90,2)
+rf_measures_result <- c()
+ela_measures_result <- c()
+total <- nrow(training)
+#balanced_accuracy <- randomForest_performace(training,testing)
+result <- testing
+for(i in partitions){
+  porcent <- (i*total) / 100
+  training_noisy <- generate_data_noisy(noisy_data,porcent)
+  vector_pred_result <- get_randomForest_performace_vector(training_noisy,testing)
+  if(sum(is.na(vector_pred_result)) == 0){
+    result <- cbind(result, vector_pred_result)
+  }
+}
+
+result
+names(result) = c(names(testing),paste('pn',partitions,sep = '_'))
+result
+write.table(result,file = "noisy_by_port_result.txt",sep="|", row.names = F)
+```
+
 #Robustness Analisys: ploting accuracy
 ```{r}
 index <- seq(2,90,2)
@@ -1224,5 +1259,17 @@ cs_data.result
 ```
 
 ```{r}
-
+for(i in c(1:30)){
+ current_seed <- 226 + i
+ set.seed(current_seed)
+ size_training <- nrow(training)
+ rf_training.sampled_current <- training[sample(size_training, size_training), ]
+ 
+ print_data = rf_training.sampled_current[,c(1:10,14)]
+ file_name = paste(paste("trainin_sample", i, sep = '_'), 'csv', sep = '.')
+ write.csv(print_data,file=file_name , row.names = F)
+}
+ 
+ #write.csv(testing[,c(1:11)], file='testing.csv', row.names = F)
+```
 ```

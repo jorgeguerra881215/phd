@@ -1,0 +1,20 @@
+---
+title: "CAI, experiment analys"
+output: html_notebook
+---
+
+# Loading libraries
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(ggplot2))
+suppressMessages(library(dplyr))
+```
+
+# Noisy Data Section
+```{r}
+noisy_rf_accuracy <- read.table('/home/jguerra/repo/test_result_rf_accuracy.txt', stringsAsFactors = F, sep = '|')
+noisy_rf_ela <- read.table('/home/jguerra/repo/test_result_ela_measure.txt', stringsAsFactors = F, sep = '|')
+
+noisy_rf_accuracy
+
+```
