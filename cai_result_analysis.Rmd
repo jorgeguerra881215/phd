@@ -10,11 +10,540 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(dplyr))
 ```
 
+#CTU-13 Dataset section: CTU-13 Dataset used in CAI
+```{r}
+myData = read.csv('./datasets/data_all_result.txt', stringsAsFactors = F, sep = ' ')
+myData$port = as.factor(myData$port)
+myData = myData %>% mutate(letter_count = nchar(State))
+#Keep only connection with more than 3 symbols
+myData <- myData %>% filter(letter_count > 3)
+myData <- myData %>% filter(is.na(port) != TRUE)
+
+head(myData)
+port_data <- myData %>% group_by(port) %>% dplyr::summarize(n = n(), coun_normal = sum(ifelse(Label == 'Normal',1,0)), coun_botnet = sum(ifelse(Label == 'Botnet',1,0))) %>% arrange(desc(n))
+port_data
+
+myData %>% group_by(Label) %>% dplyr:: summarize(n = n())
+```
+
+##Ploting result
+```{r}
+myData_port_section <- myData %>% filter(port %in% port_data$port[1:11])
+#ports <- c('22', '25', '53', '80', '123', '135', '443', '3128', '6667', '7600', '54728')
+
+ports <- port_data$port[1:11]
+aux_vector_port <- c(rep(ports, each = 2))
+class_vector <- c(rep(c("Normal", "Botnet"), times = 11))
+frequency_values <- c()
+count <- 1
+for(i in 1:length(ports)){
+  aux_port <- ports[i]
+  aux_vector <- port_data %>% filter(port == aux_port)
+  frequency_values[count] = ifelse(aux_vector$coun_normal == 0, NaN, aux_vector$coun_normal) 
+  frequency_values[count+1] = ifelse(aux_vector$coun_botnet == 0, NaN, aux_vector$coun_botnet)
+  count = count + 2
+}
+mix_data <- data.frame('ports' = aux_vector_port, 'class' = class_vector, 'freq' = frequency_values)
+aux_freq <- frequency_values
+aux_freq[is.na(aux_freq)] <- 0
+
+#library(plyr)
+mix_data <- ddply(mix_data, .(ports), 
+   transform, pos = cumsum(aux_freq) - (0.5 * aux_freq)
+)
+
+# plot bars and add text
+mix_data$ports = as.factor(mix_data$ports)
+p <- ggplot(mix_data, aes(x = ports, y = freq)) +
+     geom_bar(aes(fill = class), stat="identity") +
+     #geom_text(aes(label = freq, y = pos), size = 3) +
+     labs(title="", 
+       caption="Source: CTU-13", 
+       x = "Port",
+       y="Class Distribution", 
+       color=NULL) +
+     theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.text=element_text(size=12),
+        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+     scale_fill_manual("legend", values = c("Normal" = "#00bfc4ff", "Botnet" = "#f8766dff")) + 
+     theme_bw()
+
+     
+p + scale_y_sqrt()
+```
+### Same graph whit different code
+```{r}
+plot <- ggplot(myData_port_section) +
+  geom_bar(aes(x=port,fill=Label)) +
+  #geom_text(aes(label = frequency_values), size = 3) + 
+  labs(title="Class distribution", 
+       caption="Source: CTU-13", 
+       x = "Port",
+       y="Count", 
+       color=NULL) +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.text=element_text(size=12),
+        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+  scale_fill_manual("legend", values = c("Normal" = "#00bfc4ff", "Botnet" = "#f8766dff")) + 
+  theme_bw()
+
+plot + scale_y_continuous(trans='log10') #+ scale_y_continuous(trans='log2')
+plot + scale_y_sqrt()
+
+```
+
 # Noisy Data Section
 ```{r}
-noisy_rf_accuracy <- read.table('/home/jguerra/repo/test_result_rf_accuracy.txt', stringsAsFactors = F, sep = '|')
-noisy_rf_ela <- read.table('/home/jguerra/repo/test_result_ela_measure.txt', stringsAsFactors = F, sep = '|')
+noisy_rf_accuracy <- read.csv('/home/jguerra/repo/test_result_rf_accuracy.txt', stringsAsFactors = F, sep = '|')
+noisy_rf_ela <- read.csv('/home/jguerra/repo/test_result_ela_measure.txt', stringsAsFactors = F, sep = '|')
+
+name = c(c('porcent_of_data') ,paste('it',c(1:30), sep = '_'))
+names(noisy_rf_accuracy) <- name
+names(noisy_rf_ela) <- name
 
 noisy_rf_accuracy
+noisy_rf_ela
+```
+
+## Ploting Result
+```{r}
+data_means <- rowMeans(noisy_rf_ela[,c(-1)])
+#data_means
+cs_pred_2 <- noisy_rf_ela[,-1]
+data_sd <- transform(cs_pred_2, SD=apply(cs_pred_2,1, sd, na.rm = TRUE))
+data_sd[,'SD']
+
+aux_data <- cbind(ds=data_sd[,'SD'],m=data_means)
+#aux_data
+data<-as.data.frame(cbind(x=noisy_rf_ela[,1],cluster=aux_data))
+data[,'m'] - (data[,'ds'] / 2)
+names(data) <- c("x","ds","m")
+#data
+pd <- position_dodge(0.5)
+ggplot(data, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "Percent of Noise",
+       y="ELA Measure", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+```
+
+```{r}
+data_means <- rowMeans(noisy_rf_accuracy[,c(-1)])
+data_means
+cs_pred_2 <- noisy_rf_accuracy[,-1]
+data_sd <- transform(cs_pred_2, SD=apply(cs_pred_2,1, sd, na.rm = TRUE))
+data_sd[,'SD']
+
+aux_data <- cbind(ds=data_sd[,'SD'],m=data_means)
+aux_data
+data<-as.data.frame(cbind(x=noisy_rf_accuracy[,1],cluster=aux_data))
+data[,'m'] - (data[,'ds'] / 2)
+names(data) <- c("x","ds","m")
+data
+pd <- position_dodge(0.5)
+ggplot(data, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "Percent of Noisy",
+       y="Accuracy", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+```
+
+## Noisy Data by Port
+```{r}
+noisy_by_port <- read.csv('/home/jguerra/repo/noisy_by_port_result.txt', stringsAsFactors = F, sep = '|')
+
+noisy_by_port$port <- as.factor(noisy_by_port$port)
+noisy_by_port_section <- noisy_by_port[,-c(1:10,12,14)]
+most_ports <- noisy_by_port_section %>% group_by(port) %>% dplyr:: summarise(n = n()) %>% arrange(desc(n))
+noisy_by_port_section <- noisy_by_port_section %>% filter(port %in% most_ports$port[0:5])
+
+noisy_by_port_20 <- noisy_by_port_section %>% mutate(prediction = ifelse(class == pn_20, 'correct', 'incorrect'))
+
+noisy_by_port_40 <- noisy_by_port_section %>% mutate(prediction = ifelse(class == pn_40, 'correct', 'incorrect'))
+
+noisy_by_port_60 <- noisy_by_port_section %>% mutate(prediction = ifelse(class == pn_60, 'correct', 'incorrect'))
+
+noisy_by_port_90 <- noisy_by_port_section %>% mutate(prediction = ifelse(class == pn_90, 'correct', 'incorrect'))
+
+```
+## Ploting result
+```{r}
+ggplot(noisy_by_port_90) +
+  geom_bar(aes(x=port,fill=prediction), position = "dodge") +
+  labs(title="Good and bag predictions by port with 20% of noisy data in training set", 
+       caption="Source: CTU-13", 
+       x = "Port",
+       y="Count", 
+       color=NULL) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+#Classifications performance
+```{r}
+class_perfor = read.csv('/home/jguerra/repo/conection_probabilistic_table.csv')
+class_perfor
+
+metric_result <- data.frame(matrix(ncol = 11, nrow = 0))
+for(i in 2:6){
+  rf__vector_prediction <- ifelse(class_perfor[,i] >= 0.5,'Botnet','Normal')
+  cf <- confusionMatrix(rf__vector_prediction,class_perfor$TrueClass)
+  result_vector <- cf$byClass
+  predictor_class <- ifelse(class_perfor$TrueClass == 'Botnet', 1, 0)
+  roc_obj <- roc(predictor_class, class_perfor[,i])
+  result_vector[12] = roc_obj$auc
+  metric_result <- rbind(metric_result,result_vector)
+}
+
+columns <- c('Sensitivity', 'Specificity', 'Pos_Pred_Value', 'Neg_Pred_Value', 'Precision', 'Recall', 'F1', 'Prevalence', 'Detection_Rate', 'Detection_Prevalence', 'Balanced_Accuracy', 'AUC')
+rows <- c('RandomForest', 'KNN', 'LogisticRegression', 'NaiveBayes', 'SVM')
+names(metric_result) <- columns
+row.names(metric_result) <- rows
+metric_result
+```
+
+```{r}
+rf__vector_prediction_test <- ifelse(class_perfor$RamdomForest >= 0.5,'Botnet','Normal')
+cf <- confusionMatrix(rf__vector_prediction_test,class_perfor$TrueClass)
+cf$byClass 
+
+library(pROC)
+predictor_class <- ifelse(class_perfor$TrueClass == 'Botnet', 1, 0)
+roc_obj <- roc(predictor_class, class_perfor$KNN)
+roc_obj$auc
+
+```
+
+#Learning Rate for Random Forest
+```{r}
+rf_data <- read.csv('/home/jguerra/repo/result_data_cacic.txt',sep = '|', stringsAsFactors = F)
+rf_data
+data_means <- rowMeans(rf_data[,c(-1)])
+data_means
+result_data_2 <- rf_data[,-1]
+data_sd <- transform(result_data_2, SD=apply(result_data_2,1, sd, na.rm = TRUE))
+data_sd[,'SD']
+
+size_features_vector <- nrow(feature_vectors_cleaned)
+split_size_training = size_features_vector / step_size
+values<-c()
+#vector_sampled
+for (i in 1:44){
+    values[i] = i*step_size
+}
+values
+aux_data <- cbind(ds=data_sd[,'SD'],m=data_means)
+aux_data
+data<-as.data.frame(cbind(x=values,cluster=aux_data))
+data[,'m'] - (data[,'ds'] / 2)
+names(data) <- c("x","ds","m")
+data
+pd <- position_dodge(0.5)
+ggplot(data, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+```
+## Analisys by port. Learning rate resulting from just one iteration(2% = 200 connections)
+```{r}
+learning_rate_result <- read.csv('/home/jguerra/repo/result_learning_rate_rf_by_connection.txt',sep = '|', stringsAsFactors = F)
+feature_vectors_cleaned <- read.csv('/home/jguerra/repo/feature_vector_cleaned.txt',sep = '|', stringsAsFactors = F)
+
+result_200 <- learning_rate_result %>% filter(size == 200)
+result_200 <- result_200 %>% arrange(id)
+#result_200
+feature_vectors_cleaned_predicted <- feature_vectors_cleaned %>% filter(id %in% result_200$id)
+feature_vectors_cleaned_predicted <- cbind(feature_vectors_cleaned_predicted,result_200[,3])
+feature_vectors_cleaned_predicted_aux <- feature_vectors_cleaned_predicted[,-c(1:12,15)]
+names(feature_vectors_cleaned_predicted_aux) <- c("subclass","port","id","predict")
+more_representative_ports <- c(25,53,80,123,443,6667) #<- feature_vectors_cleaned_predicted_aux %>% group_by(port) %>% summarise(n=n()) %>% arrange(desc(n)) %>% filter(n > 50)
+#more_representative_ports
+feature_vectors_cleaned_predicted_aux <- feature_vectors_cleaned_predicted_aux %>% filter(port %in% more_representative_ports)
+feature_vectors_cleaned_predicted_aux$port <- as.factor(feature_vectors_cleaned_predicted_aux$port)
+feature_vectors_cleaned_predicted_aux.normal <- feature_vectors_cleaned_predicted_aux %>% filter(subclass == 'normal')
+feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicted_aux %>% filter(subclass == 'botnet')
+feature_vectors_cleaned_predicted_aux.normal <- feature_vectors_cleaned_predicted_aux.normal %>% mutate(prediction = ifelse(subclass == 'normal' & predict < 0.5,'correct','incorrect'))
+feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicted_aux.botnet %>% mutate(prediction = ifelse(subclass == 'botnet' & predict > 0.5,'correct','incorrect'))
+feature_vectors_cleaned_predicted_aux.normal$predict <- as.factor(feature_vectors_cleaned_predicted_aux.normal$predict)
+feature_vectors_cleaned_predicted_aux.botnet$predict <- as.factor(feature_vectors_cleaned_predicted_aux.botnet$predict)
+
+#feature_vectors_cleaned_predicted_aux.normal
+
+ggplot(rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet) ) +
+  geom_bar(aes(x=port,fill=prediction)) +
+  labs(title="", 
+       caption="Source: CTU-13",
+       x = "port",
+       y="number of connections", 
+       color=NULL) + 
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.text=element_text(size=12),
+        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+  scale_fill_manual("legend", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+  theme_bw() 
+
+```
+
+## Analisys by port. Learning rate resulting from just one iteration(5% = 4000 connections)
+```{r}
+learning_rate_result <- read.csv('/home/jguerra/repo/result_learning_rate_rf_by_connection.txt',sep = '|', stringsAsFactors = F)
+feature_vectors_cleaned <- read.csv('/home/jguerra/repo/feature_vector_cleaned.txt',sep = '|', stringsAsFactors = F)
+
+result_4000 <- learning_rate_result %>% filter(size == 4000)
+result_4000 <- result_4000 %>% arrange(id)
+
+feature_vectors_cleaned_predicted <- feature_vectors_cleaned %>% filter(id %in% result_4000$id)
+feature_vectors_cleaned_predicted <- cbind(feature_vectors_cleaned_predicted,result_4000[,3])
+feature_vectors_cleaned_predicted_aux <- feature_vectors_cleaned_predicted[,-c(1:12,15)]
+names(feature_vectors_cleaned_predicted_aux) <- c("subclass","port","id","predict")
+more_representative_ports <- c(25,53,80,123,443,6667)
+#more_representative_ports
+feature_vectors_cleaned_predicted_aux <- feature_vectors_cleaned_predicted_aux %>% filter(port %in% more_representative_ports)
+feature_vectors_cleaned_predicted_aux$port <- as.factor(feature_vectors_cleaned_predicted_aux$port)
+feature_vectors_cleaned_predicted_aux.normal <- feature_vectors_cleaned_predicted_aux %>% filter(subclass == 'normal')
+feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicted_aux %>% filter(subclass == 'botnet')
+feature_vectors_cleaned_predicted_aux.normal <- feature_vectors_cleaned_predicted_aux.normal %>% mutate(prediction = ifelse(subclass == 'normal' & predict < 0.5,'correct','incorrect'))
+feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicted_aux.botnet %>% mutate(prediction = ifelse(subclass == 'botnet' & predict > 0.5,'correct','incorrect'))
+feature_vectors_cleaned_predicted_aux.normal$predict <- as.factor(feature_vectors_cleaned_predicted_aux.normal$predict)
+feature_vectors_cleaned_predicted_aux.botnet$predict <- as.factor(feature_vectors_cleaned_predicted_aux.botnet$predict)
+
+ggplot(rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet) ) +
+  geom_bar(aes(x=port,fill=prediction)) +
+  labs(title="", 
+       caption="Source: CTU-13",
+       x = "port",
+       y="number of connections", 
+       color=NULL) + 
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.text=element_text(size=12),
+        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+  scale_fill_manual("legend", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+  theme_bw() 
+
+```
+
+
+## Analisys by port. Learning rate resulting from just one iteration(90% = 8000 connections)
+```{r}
+learning_rate_result <- read.csv('/home/jguerra/repo/result_learning_rate_rf_by_connection.txt',sep = '|', stringsAsFactors = F)
+feature_vectors_cleaned <- read.csv('/home/jguerra/repo/feature_vector_cleaned.txt',sep = '|', stringsAsFactors = F)
+
+result_8000 <- learning_rate_result %>% filter(size == 8000)
+result_8000 <- result_8000 %>% arrange(id)
+
+feature_vectors_cleaned_predicted <- feature_vectors_cleaned %>% filter(id %in% result_8000$id)
+feature_vectors_cleaned_predicted <- cbind(feature_vectors_cleaned_predicted,result_8000[,3])
+feature_vectors_cleaned_predicted_aux <- feature_vectors_cleaned_predicted[,-c(1:12,15)]
+names(feature_vectors_cleaned_predicted_aux) <- c("subclass","port","id","predict")
+more_representative_ports <- c(25,53,80,123,443,6667)
+#more_representative_ports
+feature_vectors_cleaned_predicted_aux <- feature_vectors_cleaned_predicted_aux %>% filter(port %in% more_representative_ports)
+feature_vectors_cleaned_predicted_aux$port <- as.factor(feature_vectors_cleaned_predicted_aux$port)
+feature_vectors_cleaned_predicted_aux.normal <- feature_vectors_cleaned_predicted_aux %>% filter(subclass == 'normal')
+feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicted_aux %>% filter(subclass == 'botnet')
+feature_vectors_cleaned_predicted_aux.normal <- feature_vectors_cleaned_predicted_aux.normal %>% mutate(prediction = ifelse(subclass == 'normal' & predict < 0.5,'correct','incorrect'))
+feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicted_aux.botnet %>% mutate(prediction = ifelse(subclass == 'botnet' & predict > 0.5,'correct','incorrect'))
+feature_vectors_cleaned_predicted_aux.normal$predict <- as.factor(feature_vectors_cleaned_predicted_aux.normal$predict)
+feature_vectors_cleaned_predicted_aux.botnet$predict <- as.factor(feature_vectors_cleaned_predicted_aux.botnet$predict)
+
+ggplot(rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet) ) +
+  geom_bar(aes(x=port,fill=prediction)) +
+  labs(title="", 
+       caption="Source: CTU-13",
+       x = "port",
+       y="number of connections", 
+       color=NULL) + 
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.text=element_text(size=12),
+        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+  scale_fill_manual("legend", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+  theme_bw() 
+
+```
+
+# Learning Rate for Simple Majority Estimator
+```{r}
+cs_pred <- read.csv('/home/jguerra/repo/cosine_similarity_result_9.csv', stringsAsFactors = F)
+
+cs_pred <- cs_pred[,-1] #removing index column
+cs_pred
+```
+
+## Ploting result
+```{r}
+cs_pred.bkp <- cs_pred
+
+data_means_2 <- rowMeans(cs_pred[,c(-1)])
+
+cs_pred_2 <- cs_pred[,-1]
+data_sd_2 <- transform(cs_pred_2, SD=apply(cs_pred_2,1, sd, na.rm = TRUE))
+data_sd_2[,'SD']
+
+aux_data_2 <- cbind(ds=data_sd_2[,'SD'],m=data_means_2)
+
+data_2<-as.data.frame(cbind(x=cs_pred[,1],cluster=aux_data_2))
+data_2[,'m'] - (data_2[,'ds'] / 2)
+names(data_2) <- c("x","ds","m")
+
+pd <- position_dodge(0.5)
+ggplot(data_2, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+
+```
+
+### Combining graphs of Learning Rate result in Random Forest and Learning Rate result in Simple Majority Estimator  
+```{r}
+visual1 <- data
+c_2 <- nrow(data_2)
+visual2 <- data_2[-c(c_2, c_2 - 1, c_2 - 2, c_2 - 3, c_2 - 4, c_2 - 5),]
+
+visual1$group <- 'Random Forest'
+visual2$group <- 'Simple Estimator'
+
+visual12 <- rbind(visual1, visual2)
+visual12$group <- as.factor(visual12$group)
+
+ggplot(visual12, aes(x=x,y=m,  group=group, col=group, fill=group))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line() + 
+  #geom_point() +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+```
+
+# Random Prediction. 
+```{r}
+random_cs_pred <- read.csv('/home/jguerra/repo/random_result_9.csv', stringsAsFactors = F)
+
+random_cs_pred <- random_cs_pred[,-1] #removing index column
+random_cs_pred
+```
+
+## Ploting result
+```{r}
+random_cs_pred.bkp <- random_cs_pred
+
+data_means_3 <- rowMeans(random_cs_pred[,c(-1)])
+
+cs_pred_3 <- random_cs_pred[,-1]
+data_sd_3 <- transform(cs_pred_3, SD=apply(cs_pred_3,1, sd, na.rm = TRUE))
+data_sd_3[,'SD']
+
+aux_data_3 <- cbind(ds=data_sd_3[,'SD'],m=data_means_3)
+
+data_3<-as.data.frame(cbind(x=random_cs_pred[,1],cluster=aux_data_3))
+data_3[,'m'] - (data_3[,'ds'] / 2)
+names(data_3) <- c("x","ds","m")
+
+pd <- position_dodge(0.5)
+ggplot(data_3, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+```
+
+### Combining the three graphs
+```{r}
+visual1 <- data
+c_2 <- nrow(data_2)
+visual2 <- data_2[-c(c_2, c_2 - 1, c_2 - 2, c_2 - 3, c_2 - 4, c_2 - 5),]
+c_3 <- nrow(data_3)
+visual3 <- data_3[-c(c_3, c_3 - 1, c_3 - 2, c_3 - 3, c_3 - 4, c_3 - 5),]
+  
+visual1$group <- 'Random Forest'
+visual2$group <- 'Simple Estimator'
+visual3$group <- 'Random Estimator'
+
+visual12 <- rbind(visual1, visual2)
+visual123 <- rbind(visual3, visual12)
+visual123$group <- as.factor(visual123$group)
+
+ggplot(visual123, aes(x=x,y=m,  group=group, col=group, fill=group))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line() + 
+  #geom_point() +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
 
 ```
