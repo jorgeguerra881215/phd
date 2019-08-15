@@ -5,6 +5,8 @@ output: html_notebook
 
 # Loading libraries
 ```{r}
+#Dimension de las imagenes: w: 879 y h: 305
+#Dimension de las imagenes en fila: w:340 y h:320
 suppressMessages(library(tidyverse))
 suppressMessages(library(ggplot2))
 suppressMessages(library(dplyr))
@@ -28,70 +30,24 @@ myData %>% group_by(Label) %>% dplyr:: summarize(n = n())
 
 ##Ploting result
 ```{r}
-myData_port_section <- myData %>% filter(port %in% port_data$port[1:11])
-#ports <- c('22', '25', '53', '80', '123', '135', '443', '3128', '6667', '7600', '54728')
-
-ports <- port_data$port[1:11]
-aux_vector_port <- c(rep(ports, each = 2))
-class_vector <- c(rep(c("Normal", "Botnet"), times = 11))
-frequency_values <- c()
-count <- 1
-for(i in 1:length(ports)){
-  aux_port <- ports[i]
-  aux_vector <- port_data %>% filter(port == aux_port)
-  frequency_values[count] = ifelse(aux_vector$coun_normal == 0, NaN, aux_vector$coun_normal) 
-  frequency_values[count+1] = ifelse(aux_vector$coun_botnet == 0, NaN, aux_vector$coun_botnet)
-  count = count + 2
-}
-mix_data <- data.frame('ports' = aux_vector_port, 'class' = class_vector, 'freq' = frequency_values)
-aux_freq <- frequency_values
-aux_freq[is.na(aux_freq)] <- 0
-
-#library(plyr)
-mix_data <- ddply(mix_data, .(ports), 
-   transform, pos = cumsum(aux_freq) - (0.5 * aux_freq)
-)
-
-# plot bars and add text
-mix_data$ports = as.factor(mix_data$ports)
-p <- ggplot(mix_data, aes(x = ports, y = freq)) +
-     geom_bar(aes(fill = class), stat="identity") +
-     #geom_text(aes(label = freq, y = pos), size = 3) +
-     labs(title="", 
-       caption="Source: CTU-13", 
-       x = "Port",
-       y="Class Distribution", 
-       color=NULL) +
-     theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-     scale_fill_manual("legend", values = c("Normal" = "#00bfc4ff", "Botnet" = "#f8766dff")) + 
-     theme_bw()
-
-     
-p + scale_y_sqrt()
-```
-### Same graph whit different code
-```{r}
 plot <- ggplot(myData_port_section) +
   geom_bar(aes(x=port,fill=Label)) +
   #geom_text(aes(label = frequency_values), size = 3) + 
-  labs(title="Class distribution", 
+  labs(title="", 
        caption="Source: CTU-13", 
        x = "Port",
-       y="Count", 
-       color=NULL) +
-  theme(axis.text = element_text(size = 12),
+       y="Class Distribution", 
+       color=NULL) + 
+     scale_fill_manual("", values = c("Normal" = "#00bfc4ff", "Botnet" = "#f8766dff")) + 
+     theme_bw()+
+     theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-  scale_fill_manual("legend", values = c("Normal" = "#00bfc4ff", "Botnet" = "#f8766dff")) + 
-  theme_bw()
+        legend.position = "bottom")
 
-plot + scale_y_continuous(trans='log10') #+ scale_y_continuous(trans='log2')
-plot + scale_y_sqrt()
 
+#plot + scale_y_continuous(trans='log10') #+ scale_y_continuous(trans='log2')
+#plot + scale_y_sqrt()
+plot
 ```
 
 # Noisy Data Section
@@ -122,7 +78,7 @@ data[,'m'] - (data[,'ds'] / 2)
 names(data) <- c("x","ds","m")
 #data
 pd <- position_dodge(0.5)
-ggplot(data, aes(x=x,y=m))+
+robustness_plot <- ggplot(data, aes(x=x,y=m))+
   #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
   geom_line(color='red') + 
   geom_point(color = 'red') +
@@ -131,12 +87,13 @@ ggplot(data, aes(x=x,y=m))+
        #title="Random Forest performance with incremental training data", 
        #subtitle="Drawn from Long Data format", 
        caption="Source: CTU-13", 
-       x = "Percent of Noise",
+       x = "Noise Level [%]",
        y="ELA Measure", 
        color=NULL) +
   theme_bw() +
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14))
+robustness_plot
 ```
 
 ```{r}
@@ -201,6 +158,7 @@ ggplot(noisy_by_port_90) +
 ```
 
 #Classifications performance
+# resultados sobre las 1851 instancias de test
 ```{r}
 class_perfor = read.csv('/home/jguerra/repo/conection_probabilistic_table.csv')
 class_perfor
@@ -235,6 +193,30 @@ roc_obj$auc
 
 ```
 
+## Ploting RF results
+```{r}
+rfresults<-data.frame(metric=c("AUC","F1-Score","TPR","FPR","Accuracy"),
+           values=c(0.96,0.94,0.92,1-0.91,0.92))
+
+rfresults_plot <- ggplot(rfresults)+
+  geom_col(aes(x=metric,y=values,fill=metric))+
+  geom_text(aes(x=metric,y=values-0.1,label=values))+
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       #caption="Source: CTU-13", 
+       x = "Metric",
+       y="Metric result", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))+
+  guides(fill=FALSE)
+
+rfresults_plot
+#ggsave(filename = "Dropbox/ongoing-work/publicaciones/CAI2018/Images/rf-result-all.pdf",device = "pdf", width = 6.7, height = 2.3)
+```
+
 #Learning Rate for Random Forest
 ```{r}
 rf_data <- read.csv('/home/jguerra/repo/result_data_cacic.txt',sep = '|', stringsAsFactors = F)
@@ -260,7 +242,7 @@ data[,'m'] - (data[,'ds'] / 2)
 names(data) <- c("x","ds","m")
 data
 pd <- position_dodge(0.5)
-ggplot(data, aes(x=x,y=m))+
+learning_rate_plot <- ggplot(data, aes(x=x,y=m))+
   #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
   geom_line(color='red') + 
   geom_point(color = 'red') +
@@ -276,6 +258,7 @@ ggplot(data, aes(x=x,y=m))+
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14))
 
+learning_rate_plot
 ```
 ## Analisys by port. Learning rate resulting from just one iteration(2% = 200 connections)
 ```{r}
@@ -300,25 +283,11 @@ feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicte
 feature_vectors_cleaned_predicted_aux.normal$predict <- as.factor(feature_vectors_cleaned_predicted_aux.normal$predict)
 feature_vectors_cleaned_predicted_aux.botnet$predict <- as.factor(feature_vectors_cleaned_predicted_aux.botnet$predict)
 
-#feature_vectors_cleaned_predicted_aux.normal
-
-ggplot(rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet) ) +
-  geom_bar(aes(x=port,fill=prediction)) +
-  labs(title="", 
-       caption="Source: CTU-13",
-       x = "port",
-       y="number of connections", 
-       color=NULL) + 
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-  scale_fill_manual("legend", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
-  theme_bw() 
-
+lr_by_port_200 <- rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet)
+lr_by_port_200$iteration <- '2'
 ```
 
-## Analisys by port. Learning rate resulting from just one iteration(5% = 4000 connections)
+## Analisys by port. Learning rate resulting from just one iteration(50% = 4000 connections)
 ```{r}
 learning_rate_result <- read.csv('/home/jguerra/repo/result_learning_rate_rf_by_connection.txt',sep = '|', stringsAsFactors = F)
 feature_vectors_cleaned <- read.csv('/home/jguerra/repo/feature_vector_cleaned.txt',sep = '|', stringsAsFactors = F)
@@ -341,22 +310,9 @@ feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicte
 feature_vectors_cleaned_predicted_aux.normal$predict <- as.factor(feature_vectors_cleaned_predicted_aux.normal$predict)
 feature_vectors_cleaned_predicted_aux.botnet$predict <- as.factor(feature_vectors_cleaned_predicted_aux.botnet$predict)
 
-ggplot(rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet) ) +
-  geom_bar(aes(x=port,fill=prediction)) +
-  labs(title="", 
-       caption="Source: CTU-13",
-       x = "port",
-       y="number of connections", 
-       color=NULL) + 
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-  scale_fill_manual("legend", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
-  theme_bw() 
-
+lr_by_port_4000 <- rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet)
+lr_by_port_4000$iteration <- '5'
 ```
-
 
 ## Analisys by port. Learning rate resulting from just one iteration(90% = 8000 connections)
 ```{r}
@@ -381,20 +337,89 @@ feature_vectors_cleaned_predicted_aux.botnet <- feature_vectors_cleaned_predicte
 feature_vectors_cleaned_predicted_aux.normal$predict <- as.factor(feature_vectors_cleaned_predicted_aux.normal$predict)
 feature_vectors_cleaned_predicted_aux.botnet$predict <- as.factor(feature_vectors_cleaned_predicted_aux.botnet$predict)
 
-ggplot(rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet) ) +
-  geom_bar(aes(x=port,fill=prediction)) +
-  labs(title="", 
-       caption="Source: CTU-13",
-       x = "port",
-       y="number of connections", 
-       color=NULL) + 
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-  scale_fill_manual("legend", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
-  theme_bw() 
+lr_by_port_8000 <- rbind(feature_vectors_cleaned_predicted_aux.normal,feature_vectors_cleaned_predicted_aux.botnet)
+lr_by_port_8000$iteration <- '90'
 
+#learning_rate_result %>% group_by(size) %>% dplyr::summarise(n=n())
+```
+
+### Ploting final result
+```{r}
+lr_by_port_all <- rbind(lr_by_port_200, lr_by_port_4000)
+lr_by_port_all <- rbind(lr_by_port_all, lr_by_port_8000)
+lr_by_port_all$prediction <- as.factor(lr_by_port_all$prediction)
+lr_by_port_all$iteration <- as.factor(lr_by_port_all$iteration)
+
+port_2_percent = lr_by_port_all %>% filter(iteration == 2) %>% group_by(prediction, port) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+port_50_percent = lr_by_port_all %>% filter(iteration == 5) %>% group_by(prediction, port) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+port_90_percent = lr_by_port_all %>% filter(iteration == 90) %>% group_by(prediction, port) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+
+plot_port_2_percent <- ggplot(port_2_percent,aes(x = port, y = n,fill = prediction)) + 
+    geom_bar(position = "fill",stat = "identity", width = 0.4) +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="Source: CTU-13",
+         x = "port",
+         y="percent of connections", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    theme_bw() +
+    theme(axis.text = element_text(size = 12),
+             axis.text.x = element_text(angle = 25, hjust = 1),
+          axis.title = element_text(size = 14),
+          legend.position = "bottom")
+
+plot_port_50_percent <- ggplot(port_50_percent,aes(x = port, y = n,fill = prediction)) + 
+    geom_bar(position = "fill",stat = "identity", width = 0.4) +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="Source: CTU-13",
+         x = "port",
+         y="percent of connections", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    theme_bw() +
+    theme(axis.text = element_text(size = 12),
+           axis.text.x = element_text(angle = 25, hjust = 1),
+        axis.title = element_text(size = 14),
+        legend.position = "bottom")
+
+plot_port_90_percent <- ggplot(port_90_percent,aes(x = port, y = n,fill = prediction)) + 
+    geom_bar(position = "fill",stat = "identity", width = 0.4) +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="Source: CTU-13",
+         x = "port",
+         y="percent of connections", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    theme_bw() + 
+    theme(axis.text = element_text(size = 12),
+           axis.text.x = element_text(angle = 25, hjust = 1),
+        axis.title = element_text(size = 14),
+        legend.position = "bottom")
+
+plot_port_2_percent
+plot_port_50_percent
+plot_port_90_percent
 ```
 
 # Learning Rate for Simple Majority Estimator
@@ -422,7 +447,7 @@ data_2[,'m'] - (data_2[,'ds'] / 2)
 names(data_2) <- c("x","ds","m")
 
 pd <- position_dodge(0.5)
-ggplot(data_2, aes(x=x,y=m))+
+simple_stimator_learning_rate <- ggplot(data_2, aes(x=x,y=m))+
   #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
   geom_line(color='red') + 
   geom_point(color = 'red') +
@@ -438,7 +463,7 @@ ggplot(data_2, aes(x=x,y=m))+
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14))
 
-
+simple_stimator_learning_rate
 ```
 
 ### Combining graphs of Learning Rate result in Random Forest and Learning Rate result in Simple Majority Estimator  
@@ -530,7 +555,7 @@ visual12 <- rbind(visual1, visual2)
 visual123 <- rbind(visual3, visual12)
 visual123$group <- as.factor(visual123$group)
 
-ggplot(visual123, aes(x=x,y=m,  group=group, col=group, fill=group))+
+combined_three_graph <- ggplot(visual123, aes(x=x,y=m,  group=group, col=group, fill=group))+
   #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
   geom_line() + 
   #geom_point() +
@@ -544,6 +569,9 @@ ggplot(visual123, aes(x=x,y=m,  group=group, col=group, fill=group))+
        color=NULL) +
   theme_bw() +
   theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14))
+        axis.title = element_text(size = 14),
+        legend.position = "bottom")
+
+combined_three_graph
 
 ```

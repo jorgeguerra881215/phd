@@ -817,22 +817,46 @@ rfDataResult = data.frame(PC$PC1, PC$PC2, ifelse(rfResult == testingResult, 'Cor
 names(rfDataResult) = c('x', 'y', 'prediction', 'port')
 rfDataResult$port = as.factor(rfDataResult$port)
 
+rfDataResult_percent = rfDataResult %>% filter(!is.na(port)) %>% group_by(prediction, port) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+
+rfGraphResult <- ggplot(rfDataResult_percent,aes(x = port, y = n,fill = prediction)) + 
+    geom_bar(position = "fill",stat = "identity", width = 0.4) +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="Source: CTU-13",
+         x = "port",
+         y="percent of connections", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    scale_fill_manual("", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) + 
+    theme_bw() +
+    theme(axis.text = element_text(size = 12),
+             axis.text.x = element_text(angle = 25, hjust = 1),
+          axis.title = element_text(size = 14),
+          legend.position = "bottom")
+
 rfGraphResult <- ggplot(rfDataResult %>% filter(!is.na(port))) +
      geom_bar(aes(x = port, fill = prediction)) +
-     #geom_text(aes(label = freq, y = pos), size = 3) +
+     #geom_text(aes(label = freq, y = pos), size = 3) + 
      labs(title="", 
        caption="Source: Testing Dataset", 
        x = "Port",
-       y="Random Forest Prediction Result", 
+       y="RF Prediction Result", 
        color=NULL) +
+     scale_fill_manual("", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) +
+     theme_bw()+
      theme(axis.text = element_text(size = 12),
+           axis.text.x = element_text(angle = 25, hjust = 1),
         axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-     scale_fill_manual("legend", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) + 
-     theme_bw()
+        legend.position = "bottom")
 
-rfGraphResult + scale_y_sqrt()
+rfGraphResult + scale_y_continuous(trans = 'log2')
+rfGraphResult
 
 ```
 
@@ -850,12 +874,11 @@ knnGraphResult <- ggplot(knnDataResult %>% filter(!is.na(port))) +
        x = "Port",
        y="K-NN Prediction Result", 
        color=NULL) +
+     scale_fill_manual("", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) +
+     theme_bw()+
      theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-     scale_fill_manual("legend", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) + 
-     theme_bw()
+        legend.position = "bottom")
 
 knnGraphResult + scale_y_sqrt()
 
@@ -875,12 +898,11 @@ logisticGraphResult <- ggplot(logisticDataResult %>% filter(!is.na(port))) +
        x = "Port",
        y="Logistic Regression Prediction Result", 
        color=NULL) +
+     scale_fill_manual("", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) +
+     theme_bw()+
      theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-     scale_fill_manual("legend", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) + 
-     theme_bw()
+        legend.position = "bottom")
 
 logisticGraphResult + scale_y_sqrt()
 
@@ -900,12 +922,11 @@ naiveGraphResult <- ggplot(naiveDataResult %>% filter(!is.na(port))) +
        x = "Port",
        y="Naive Bayes Prediction Result", 
        color=NULL) +
+     scale_fill_manual("", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) +
+     theme_bw()+
      theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-     scale_fill_manual("legend", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) + 
-     theme_bw()
+        legend.position = "bottom")
 
 naiveGraphResult + scale_y_sqrt()
 
@@ -923,14 +944,13 @@ svmGraphResult <- ggplot(svmDataResult %>% filter(!is.na(port))) +
      labs(title="", 
        caption="Source: Testing Dataset", 
        x = "Port",
-       y="Naive Bayes Prediction Result", 
+       y="Support VM Prediction Result", 
        color=NULL) +
+     scale_fill_manual("", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) +
+     theme_bw()+
      theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
-        legend.text=element_text(size=12),
-        legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
-     scale_fill_manual("legend", values = c("CorrectlyPredicted" = "#00bfc4ff", "WronglyPredicted" = "#f8766dff")) + 
-     theme_bw()
+        legend.position = "bottom")
 
 svmGraphResult + scale_y_sqrt()
 

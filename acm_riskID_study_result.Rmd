@@ -1,6 +1,8 @@
 ---
 title: "ACM RiskID Script Result"
-output: html_notebook
+output:
+  html_notebook: default
+  html_document: default
 ---
 
 #Environment
@@ -13,20 +15,136 @@ suppressMessages(library(plotly))
 suppressMessages(library(lubridate))
 ```
 
-#Load Data
+#Load RiskID Dataset
 ```{r}
 study_dataset <- read.csv('/home/jguerra/datasets/acm_riskID_study/ctu13_riskID_dataset.txt', stringsAsFactors = F, sep = '|')
-study_result <- read.csv('/home/jguerra/datasets/acm_riskID_study/only_order_urank_logs.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE)
-names(study_result) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
-study_dataset
-study_result
 ```
 
-# Numero de etiquetas por usuarios
+#Load Results by Studies
+## Study 1
+```{r}
+#Only Ordered
+sr_only_ordered <- try(read.csv('/home/jguerra/riskID_study_results/s1/urank_logs_only_ordered.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+if("try-error" %in% class(sr_only_ordered)) sr_only_ordered = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+names(sr_only_ordered) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#Only Prediction
+sr_only_prediction <- try(read.csv('/home/jguerra/riskID_study_results/s1/urank_logs_only_prediction.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+if("try-error" %in% class(sr_only_prediction)) sr_only_prediction = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+names(sr_only_prediction) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#Simple
+sr_simple <- try(read.csv('/home/jguerra/riskID_study_results/s1/urank_logs_simple.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+if("try-error" %in% class(sr_simple)) sr_simple = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+names(sr_simple) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#Full
+sr_full <- try(read.csv('/home/jguerra/riskID_study_results/s1/urank_logs_full.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+if("try-error" %in% class(sr_full)) sr_full = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+names(sr_full) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+study_result_1 <- rbind(sr_only_ordered, sr_only_prediction)
+study_result_1 <- rbind(study_result_1, sr_simple)
+study_result_1 <- rbind(study_result_1, sr_full)
+study_result_1$study <- 1
+```
+
+## Study 2
+```{r}
+#Only Ordered
+sr_only_ordered_2 <- try(read.csv('/home/jguerra/riskID_study_results/s2/urank_logs_only_ordered.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+if("try-error" %in% class(sr_only_ordered_2)) sr_only_ordered_2 = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+names(sr_only_ordered_2) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#Only Prediction
+sr_only_prediction_2 <- try(read.csv('/home/jguerra/riskID_study_results/s2/urank_logs_only_prediction.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+if("try-error" %in% class(sr_only_prediction_2)) sr_only_prediction_2 = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+names(sr_only_prediction_2) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#Simple
+sr_simple_2 <- try(read.csv('/home/jguerra/riskID_study_results/s2/urank_logs_simple.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+if("try-error" %in% class(sr_simple_2)) sr_simple_2 = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+names(sr_simple_2) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#Full
+sr_full_2 <- try(read.csv('/home/jguerra/riskID_study_results/s2/urank_logs_full.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+if("try-error" %in% class(sr_full_2)) sr_full_2 = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+names(sr_full_2) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+study_result_2 <- rbind(sr_only_ordered_2, sr_only_prediction_2)
+study_result_2 <- rbind(study_result_2, sr_simple_2)
+study_result_2 <- rbind(study_result_2, sr_full_2)
+study_result_2$study <- '2'
+
+```
+
+#Study 2: Labeling analysis
+```{r}
+#Filtering only action of labeling
+label_botnet_sr_2 <- study_result_2 %>% filter(action == 'Label Botnet')
+label_normal_sr_2 <- study_result_2 %>% filter(action == 'Label Normal')
+label_action_sr_2 <- bind_rows(label_botnet_sr_2, label_normal_sr_2)
+label_action_sr_2 <- label_action_sr_2[,c('connection_id','action','user_token', 'app_version')]
+names(label_action_sr_2) <- c('id','action','user_token', 'app_version')
+label_action_result_sr_2 = merge(x = label_action_sr_2, y = study_dataset[,c(1,2)], by = "id", all.x = TRUE)
+label_action_result_final_sr_2 = label_action_result_sr_2 %>% mutate(result = ifelse((action == 'Label Botnet' & class == 'botnet') | (action == 'Label Normal' & class == 'normal'),1,0))
+
+#correct label 
+#sum(label_action_result_final_sr_2$result)
+#incorrect label
+#nrow(label_action_result_final_sr_2) - sum(label_action_result_final_sr_2$result)
+
+label_action_result_final_sr_2 %>% group_by(user_token) %>% dplyr::summarise(count_label = n(), correct_label = sum(result), incorrect_label = count_label - correct_label, accuracy = ((correct_label * 100)/count_label)/100) %>% arrange(desc(correct_label))
+
+#number of action of label by each app version
+number_of_action_of_label_by_each_app_version <- label_action_sr_2 %>% group_by(app_version) %>% dplyr::summarise(n = n())
+
+#number of label by each app version
+number_of_label_by_each_app_version <- label_action_result_final_sr_2 %>% group_by(app_version) %>% dplyr::summarise(count_label = n(), correct_label = sum(result), incorrect_label = count_label - correct_label, accuracy = ((correct_label * 100)/count_label)/100) %>% arrange(desc(correct_label))
+number_of_label_by_each_app_version
+
+
+```
+
+
+
+
+#Putting all together
+```{r}
+study_result <- rbind(study_result_1, study_result_2)
+study_result
+
+#write_csv(study_result,'riskID_studies_result.txt')
+```
+
+#Loading results directly from apps (only if necessary)
+```{r}
+#study_result_1 <- try(read.csv('/home/jguerra/public_html/riskID_only_ordered_list/server/urank_logs.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+#if("try-error" %in% class(study_result_1)) study_result_1 = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+#names(study_result_1) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#study_result_2 <- try(read.csv('/home/jguerra/public_html/riskID_only_prediction/server/urank_logs.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+#if("try-error" %in% class(study_result_2)) study_result_2 = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+#names(study_result_2) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#study_result_3 <- try(read.csv('/home/jguerra/public_html/riskID_simple/server/urank_logs.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+#if("try-error" %in% class(study_result_3)) study_result_3 = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+#names(study_result_3) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#study_result_4 <- try(read.csv('/home/jguerra/public_html/riskID/app/server/urank_logs.txt', stringsAsFactors = F, sep = ',', row.names = NULL, header = FALSE))
+#if("try-error" %in% class(study_result_4)) study_result_4 = data.frame(session_id = character(),user_name = character(), user_token = character(), date_time = character(), action = character(), connection_id = character(), app_version = character())
+#names(study_result_4) <- c('session_id', 'user_name', 'user_token', 'date_time', 'action','connection_id', 'app_version')
+
+#study_result <- rbind(study_result_1, study_result_2)
+#study_result <- rbind(study_result, study_result_3)
+#study_result <- rbind(study_result, study_result_4)
+```
+
+# Number of Label by users
 ```{r}
 study_result_aux <- study_result
 study_result_aux <- study_result_aux %>% mutate(is_label_action = ifelse(action == 'Label Botnet' | action == 'Label Normal', 1, 0))
-study_result_aux %>% group_by(user_name) %>% summarise(label = sum(is_label_action))
+study_result_aux %>% group_by(user_token) %>% dplyr::summarise(num_label = sum(is_label_action)) %>% arrange(desc(num_label))
 ```
 
 #Correct Label count and by Users
@@ -34,8 +152,8 @@ study_result_aux %>% group_by(user_name) %>% summarise(label = sum(is_label_acti
 label_botnet <- study_result %>% filter(action == 'Label Botnet')
 label_normal <- study_result %>% filter(action == 'Label Normal')
 label_action <- bind_rows(label_botnet, label_normal)
-label_action <- label_action[,c('connection_id','action','user_name')]
-names(label_action) <- c('id','action','user_name')
+label_action <- label_action[,c('connection_id','action','user_token')]
+names(label_action) <- c('id','action','user_token')
 label_action_result = merge(x = label_action, y = study_dataset[,c(1,2)], by = "id", all.x = TRUE)
 label_action_result_final = label_action_result %>% mutate(result = ifelse((action == 'Label Botnet' & class == 'botnet') | (action == 'Label Normal' & class == 'normal'),1,0))
 #correct label 
@@ -43,7 +161,7 @@ sum(label_action_result_final$result)
 #incorrect label
 nrow(label_action_result_final) - sum(label_action_result_final$result)
 
-label_action_result_final %>% group_by(user_name) %>% summarise(n=n(), correct_label = sum(result), incorrect_label = n - correct_label)
+label_action_result_final %>% group_by(user_token) %>% dplyr::summarise(n=n(), correct_label = sum(result), incorrect_label = n - correct_label) %>% arrange(desc(correct_label))
 ```
 
 # Correct Normal
@@ -61,19 +179,18 @@ correct_botnet
 # Time Analysis
 # Time spend by users
 ```{r}
-study_result_time <- study_result[c(2,4)]
+study_result_time <- study_result[c('user_token','date_time')]
 study_result_time <- study_result_time %>% mutate(real_date_time = parse_date_time(date_time, orders="ymd_HMS"))
-study_result_time %>% group_by(user_name) %>% summarise(spend_time = tail(real_date_time, n = 1) - real_date_time[1])
+study_result_time %>% group_by(user_token) %>% dplyr::summarise(spend_time = tail(real_date_time, n = 1) - real_date_time[1])
 ```
 
 # Elapsed time until the first label 
 ```{r}
-study_result
 study_result_time <- cbind(study_result_time,'action' = study_result$action)
-first_label_by_users <- study_result_time %>% filter(action == 'Label Botnet' | action == 'Label Normal') %>% group_by(user_name) %>% summarise(first_label = real_date_time[1])
-first_time_by_users <- study_result_time %>% group_by(user_name) %>% summarise(first_time = real_date_time[1])
+first_label_by_users <- study_result_time %>% filter(action == 'Label Botnet' | action == 'Label Normal') %>% group_by(user_token) %>% dplyr::summarise(first_label = real_date_time[1])
+first_time_by_users <- study_result_time %>% group_by(user_token) %>% dplyr::summarise(first_time = real_date_time[1])
 first_time_by_users
 first_label_by_users
-elapsed_time <- merge(x = first_label_by_users, y = first_time_by_users, by = 'user_name', all.x = TRUE)
-elapsed_time %>% group_by(user_name) %>% summarise(elapsed_time_until_first_time = first_label - first_time)
+elapsed_time <- merge(x = first_label_by_users, y = first_time_by_users, by = 'user_token', all.x = TRUE)
+elapsed_time %>% group_by(user_token) %>% dplyr::summarise(elapsed_time_until_first_label = first_label - first_time)
 ```

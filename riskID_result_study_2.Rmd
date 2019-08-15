@@ -1,0 +1,1275 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#Environment
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(stringr))
+#suppressMessages(library(caret))
+#suppressMessages(library(doMC))
+suppressMessages(library(plotly))
+#suppressMessages(library(lubridate))
+```
+
+#Loading result data
+```{r}
+study_dataset <- read.csv('/home/jguerra/datasets/acm_riskID_study/ctu13_riskID_dataset.txt', stringsAsFactors = F, sep = '|')
+study_dataset <- study_dataset %>% mutate(ip_i = str_split_fixed(connection_id, '-', 4)[,1])
+study_dataset <- study_dataset %>% mutate(ip_f = str_split_fixed(connection_id, '-', 4)[,2])
+study_dataset <- study_dataset %>% mutate(port = str_split_fixed(connection_id, '-', 4)[,3])
+study_dataset <- study_dataset %>% mutate(proto = str_split_fixed(connection_id, '-', 4)[,4])
+
+study_result <- read.csv('/home/jguerra/datasets/acm_riskID_study/riskID_studies_result.txt', stringsAsFactors = F)
+study_result
+```
+
+#Study 2
+## Number of users by app versions 
+```{r}
+study_result %>% filter(study == 2) %>% group_by(app_version, user_name) %>% dplyr::summarise(n = n()) %>% arrange(desc(n)) %>% group_by(app_version) %>% dplyr::summarise(users = n()) %>% arrange(desc(users))
+```
+
+```{r}
+sr_2 <- study_result %>% filter(study == 2)
+userstoken <- sr_2 %>% group_by(user_token) %>% dplyr::summarise(n = n())
+user_numbers <- paste('u',c(1:17), sep = '')
+userstoken <- cbind(userstoken, user_numbers)
+userstoken
+
+study_result
+```
+
+##General labeling analysis
+```{r}
+sr_2 <- study_result %>% filter(study == 2)
+
+botnet_label <- sr_2 %>% filter(action == 'Label Botnet')
+normal_label <- sr_2 %>% filter(action == 'Label Normal')
+action_label <- bind_rows(botnet_label, normal_label)
+action_label <- action_label[,c('connection_id','user_token', 'user_name','action', 'app_version')]
+names(action_label) <- c('id','user_token','user_name','action','app_version')
+
+label_result = merge(x = action_label, y = study_dataset[,c(1,2,6,7,8,9,10)], by = "id", all.x = TRUE)
+label_result = label_result %>% mutate(result = ifelse((action == 'Label Botnet' & class == 'botnet') | (action == 'Label Normal' & class == 'normal'),'correct','incorrect'))
+label_result = label_result %>% mutate(result_count = ifelse((action == 'Label Botnet' & class == 'botnet') | (action == 'Label Normal' & class == 'normal'),1,0))
+
+label_result
+```
+
+```{r}
+label_result.bkp <- label_result
+label_result <- label_result %>% mutate(user = if_else(user_token == '10jsndoap7dgqfr', 1, 
+                      if_else(user_token == '2nz484f8jk7yzaor',2,
+                      if_else(user_token == '2y4qfwy2e3unxw29',3,
+                      if_else(user_token == '42rw019ynzh0k9',4,
+                      if_else(user_token == '8j0r92nzlicf2yb9',5,
+                      if_else(user_token == '94tes32nwylow29',6,
+                      if_else(user_token == 'a5nyavqdwnpfd2t9',7,
+                      if_else(user_token == 'cs6ja4cjh7xskyb9',8,
+                      if_else(user_token == 'e94x4bggxpwuerk9',9,
+                      if_else(user_token == 'gk3o8w8fp1iqkt9',10,
+                      if_else(user_token == 'hnxqaayny3cy2e29',11,
+                      if_else(user_token == 'hor3c7v1uy096bt9',12,
+                      if_else(user_token == 'rwt2uja6gaurf6r',13,
+                      if_else(user_token == 'susdtwau9cuqsemi',14,
+                      if_else(user_token == 'uz3vzelcb3uwhfr',15,
+                      if_else(user_token == 'walg3rp0jrk3ayvi',16,
+                      if_else(user_token == 'xwfop0xaenqumcxr',17,NULL
+                      ))))))))))))))))))
+label_result %>% group_by(user_token,user) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+```
+
+```{r}
+label_result %>% group_by(app_version) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+
+label_result %>% filter(app_version == ' prediction add-on') %>% group_by(result,action) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+
+
+```
+
+#Para los casos que usan prediccion: cuantas etiquetas se asignaron de acuerdo a la prediccion y cuantas se asignaron al reves. Y para cada caso cuantas fueron correctas
+```{r}
+#version con prediccion solamente
+label_result_prediction <- label_result %>% filter(app_version == ' prediction add-on')
+label_prediction_equal <- label_result_prediction %>% filter((action == 'Label Normal' & prob < 0.5) | (action == 'Label Botnet' & prob > 0.5))
+label_prediction_equal %>% group_by(result) %>% dplyr::summarise(n = n())
+
+label_prediction_not_equal <- label_result_prediction %>% filter((action == 'Label Normal' & prob > 0.5) | (action == 'Label Botnet' & prob < 0.5))
+label_prediction_not_equal %>% group_by(result) %>% dplyr::summarise(n = n())
+
+#version full
+label_result_full <- label_result %>% filter(app_version == ' full app')
+label_full_equal <- label_result_full %>% filter((action == 'Label Normal' & prob < 0.5) | (action == 'Label Botnet' & prob > 0.5))
+label_full_equal %>% group_by(result) %>% dplyr::summarise(n = n())
+
+label_full_not_equal <- label_result_full %>% filter((action == 'Label Normal' & prob > 0.5) | (action == 'Label Botnet' & prob < 0.5))
+label_full_not_equal %>% group_by(result) %>% dplyr::summarise(n = n())
+```
+
+#Cuales conexiones se eligieron segun la prediccion: las de mayor o las de menor prediccion?
+```{r}
+label_result
+only_prediction <- label_result %>% filter(app_version == ' prediction add-on' | app_version == ' full app')
+#Alta Normal (etiquetas con prediccion menor a 0.25)
+alta_normal <- only_prediction %>% filter(prob < 0.26) %>% group_by(app_version) %>% dplyr::summarise(n = n())
+only_prediction %>% filter(prob < 0.26 & action == 'Label Normal') %>% group_by(app_version) %>% dplyr::summarise(n = n())
+
+#Alta Botnet (etiquetas con prediccion mayor a 0.75)
+alta_botnet <- only_prediction %>% filter(prob > 0.74) %>% group_by(app_version) %>% dplyr::summarise(n = n())
+only_prediction %>% filter(prob > 0.74 & action == 'Label Normal') %>% group_by(app_version) %>% dplyr::summarise(n = n())
+
+#Medium labels(etiquetas con prediccion intermedia entre 0.25 y 0.75)
+medium_label <- only_prediction %>% filter(prob > 0.25 & prob < 0.75) %>% group_by(app_version) %>% dplyr::summarise(n = n())
+only_prediction %>% filter((prob > 0.25 & prob < 0.75) & (result == 'incorrect')) %>% group_by(app_version) %>% dplyr::summarise(n = n())
+
+only_prediction %>% filter(prob > 0.25 & prob < 0.75)
+```
+
+```{r}
+ggplot(data = label_result) + 
+  geom_point(mapping = aes(x = user, y = prob, color= result))
+
+users_value <- unique(only_prediction$user) #c(1:17)
+sp <- ggplot(data = only_prediction, aes(x = user, y = prob, color = result)) +
+  geom_point() +
+  labs(title="", 
+       caption="Source: RiskID User Interaction Result", 
+       x = "Users",
+       y = "Botnet Probability", 
+       color=NULL) + 
+     scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+     scale_x_continuous("Users", labels = paste('u',as.character(users_value), sep = ''), breaks = users_value) + 
+     theme_bw()+
+     theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 18),
+        legend.position = "bottom", 
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 18))
+sp + scale_color_manual(values=c("#00bfc4ff", "red")) #f8766dff #00bfc4ff 
+```
+
+## Plotting result by users
+```{r}
+label_result_aux <- label_result %>% group_by(result,user_token, user_name) %>% dplyr::summarise(n=n()) %>% arrange(desc(n))
+
+plot_label <- ggplot(label_result_aux,aes(x = user_name, y = n,fill = result)) + 
+    geom_bar(position = "fill",stat = "identity", width = 0.4) +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="Source: RiskID User Interaction Result",
+         x = "user token",
+         y="percent of label", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    theme_bw() +
+    theme(axis.text = element_text(size = 12),
+             axis.text.x = element_text(angle = 25, hjust = 1),
+          axis.title = element_text(size = 14),
+          legend.position = "bottom")
+
+plot_label
+```
+
+##Plotting result by the different app versions
+### Number of labels by the different app versions
+```{r}
+label_result_aux <- label_result %>% group_by(app_version) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+label_result$user_name <- as.factor(label_result$user_name)
+label_result$user_token <- as.factor(label_result$user_token)
+ggplot(data = label_result)+
+  geom_bar(mapping = aes(x = app_version, fill = user_name))+
+    labs(title="", 
+         caption="Source: RiskID User Interaction Result",
+         x = "app version",
+         y="count of labels", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    #scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    theme_bw() +
+    theme(axis.text = element_text(size = 12),
+             axis.text.x = element_text(angle = 10, hjust = 1),
+          axis.title = element_text(size = 14))
+          #,legend.position = "bottom")
+```
+
+```{r}
+aux <- label_result
+aux <- aux %>% mutate(version = if_else(app_version == ' full app', 'Full',
+                                                                    if_else(app_version == ' simple app', 'Simple',
+                                                                    if_else(app_version == ' reorder add-on', 'CSM',
+                                                                    if_else(app_version == ' prediction add-on','LPM',NULL)))))
+
+aux_p <- ggplot(data = aux)+
+  geom_bar(mapping = aes(x = version, fill = result))+
+    labs(title="", 
+         caption="Source: RiskID User Interaction Result",
+         x = "app version",
+         y="count of labels", 
+         color=NULL) + 
+    scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    scale_x_discrete(limits=c('Simple','CSM','LPM','Full'))+
+    theme_bw() +
+    theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 18),
+        legend.position = "bottom", 
+        legend.text = element_text(size = 18),
+        legend.title = element_text(size = 18))
+          #,legend.position = "bottom")
+
+aux_p
+```
+
+### Statistic result
+```{r}
+label_result_accuracy <- label_result %>% group_by(app_version,user_token) %>% dplyr::summarise(count_label = n(), correct_label = sum(result_count), incorrect_label = count_label - correct_label, accuracy = ((correct_label * 100)/count_label)/100) %>% arrange(desc(correct_label))
+
+
+#label_result_accuracy
+
+#lr_app_reorder = label_result_accuracy %>% filter(app_version == ' reorder add-on')
+#lr_app_prediction = label_result_accuracy %>% filter(app_version == ' prediction add-on')
+#lr_app_simple = label_result_accuracy %>% filter(app_version == ' simple app')
+#lr_app_full = label_result_accuracy %>% filter(app_version == ' full app')
+
+label_result_accuracy <- label_result_accuracy %>% mutate(version = if_else(app_version == ' full app', 'Full',
+                                                                    if_else(app_version == ' simple app', 'Simple',
+                                                                    if_else(app_version == ' reorder add-on', 'CSM',
+                                                                    if_else(app_version == ' prediction add-on','LPM',NULL)))))
+
+aux_p <- ggplot(label_result_accuracy, aes(x=version, y = accuracy))+
+  geom_boxplot()+
+  scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="Source: RiskID User Interaction Result",
+         x = "app version",
+         y="accuracy of labeling task", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    scale_x_discrete(limits=c('Simple','CSM','LPM','Full'))+
+    theme_bw() +
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 18),
+          legend.position = "bottom", 
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+
+
+aux_p
+#label_result_aux <- label_result %>% group_by(result,user_token, user_name) %>% dplyr::summarise(n=n()) %>% arrange(desc(n))
+```
+
+```{r}
+label_result_accuracy
+
+ggplot(label_result_accuracy, aes(x=app_version, y=accuracy))+#, group=supp, color=supp)) + 
+  geom_line() +
+  geom_point()+
+  geom_errorbar(aes(ymin=accuracy-sd(accuracy), ymax=accuracy+sd(accuracy)), width=.2,
+                 position=position_dodge(0.05))
+```
+
+#Plotting result by the different ports
+```{r}
+label_result_aux <- label_result %>% group_by(result,port, user_name) %>% dplyr::summarise(n=n()) %>% arrange(desc(n))
+label_result_aux <-  label_result_aux %>% filter(port != 'NA')
+
+plot_label_port <- ggplot(label_result_aux, aes(x = port, y = n, fill = result))+
+  geom_bar(position = 'fill', stat = 'identity', width = 0.4) +
+  scale_y_continuous(labels = percent_format())+
+  labs(
+    title = "",
+    caption = "Source: RiskID User Interaction Result",
+    x = 'port',
+    y = 'percent of label',
+    color = NULL)+
+  theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+  scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+           #axis.text.x = element_text(angle = 25, hjust = 1),
+        axis.title = element_text(size = 14),
+        legend.position = "bottom")
+
+plot_label_port
+```
+
+#Plotting result by the different protocols
+```{r}
+label_result_aux <- label_result %>% group_by(result,proto, user_name) %>% dplyr::summarise(n=n()) %>% arrange(desc(n))
+label_result_aux <-  label_result_aux %>% filter(proto != 'NA')
+
+plot_label_proto <- ggplot(label_result_aux, aes(x = proto, y = n, fill = result))+
+  geom_bar(position = 'fill', stat = 'identity', width = 0.4) +
+  scale_y_continuous(labels = percent_format())+
+  labs(
+    title = "",
+    caption = "Source: RiskID User Interaction Result",
+    x = 'protocol',
+    y = 'percent of label',
+    color = NULL)+
+  theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+  scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+           #axis.text.x = element_text(angle = 25, hjust = 1),
+        axis.title = element_text(size = 14),
+        legend.position = "bottom")
+
+plot_label_proto 
+```
+
+
+#Time analysis
+```{r}
+sr_2 <- study_result %>% filter(study == 2)
+
+sr_2 <- sr_2 %>% mutate(user = if_else(user_token == '10jsndoap7dgqfr', 1, 
+                      if_else(user_token == '2nz484f8jk7yzaor',2,
+                      if_else(user_token == '2y4qfwy2e3unxw29',3,
+                      if_else(user_token == '42rw019ynzh0k9',4,
+                      if_else(user_token == '8j0r92nzlicf2yb9',5,
+                      if_else(user_token == '94tes32nwylow29',6,
+                      if_else(user_token == 'a5nyavqdwnpfd2t9',7,
+                      if_else(user_token == 'cs6ja4cjh7xskyb9',8,
+                      if_else(user_token == 'e94x4bggxpwuerk9',9,
+                      if_else(user_token == 'gk3o8w8fp1iqkt9',10,
+                      if_else(user_token == 'hnxqaayny3cy2e29',11,
+                      if_else(user_token == 'hor3c7v1uy096bt9',12,
+                      if_else(user_token == 'rwt2uja6gaurf6r',13,
+                      if_else(user_token == 'susdtwau9cuqsemi',14,
+                      if_else(user_token == 'uz3vzelcb3uwhfr',15,
+                      if_else(user_token == 'walg3rp0jrk3ayvi',16,
+                      if_else(user_token == 'xwfop0xaenqumcxr',17,NULL
+                      ))))))))))))))))))
+sr_2$timeposix<-as.POSIXct(sr_2$date_time, format="%Y-%m-%d_%H.%M.%S")
+sr_2$timestamp <- as.numeric(sr_2$timeposix)
+sr_2
+```
+
+#Time for label
+```{r}
+sr_2.label <- sr_2 %>% filter(action == 'Label Botnet' | action == 'Label Normal')
+
+#sr_2 %>% group_by(user_token,user) %>% dplyr::summarise(n = n()) %>% arrange(desc(n))
+sr_2 <- filter(user)
+aux <- sr_2 %>% filter(user == 7)
+max(aux$timeposix) - min(aux$timeposix)
+sr_2 %>% group_by(user) %>% dplyr::summarise(spend_time = difftime(max(timeposix), min(timeposix))) %>% arrange(desc(spend_time))
+
+colnames(sr_2)[6] <- "id"
+sr_2.aux <- merge(x = sr_2, y = study_dataset[,c(1,2,6,7,8,9,10)], by = "id", all.x = TRUE)
+
+```
+
+#Number of labels by quarter
+```{r}
+result <- data.frame()
+for(i in c(2:17)){
+  current_user_logs <- sr_2 %>% filter(user == i)
+  current_user_result <- label_result %>% filter(user == i)
+  t_inicial <- current_user_logs$timestamp[1]
+  t_final <- current_user_logs$timestamp[length(current_user_logs$timestamp)]
+  interval <- (t_final - t_inicial)/8
+  count <- 0
+  number_correct_1 = number_correct_2 = number_correct_3 = number_correct_4 = number_correct_5 = number_correct_6 = number_correct_7 = number_correct_8 = porcent_1 = porcent_2 = porcent_3 = porcent_4 = porcent_5 = porcent_6 = porcent_7 = porcent_8 = 0
+  
+  i1 <- t_inicial + interval
+  i2 <- i1 + interval
+  i3 <- i2 + interval
+  i4 <- i3 + interval
+  i5 <- i4 + interval
+  i6 <- i5 + interval
+  i7 <- i6 + interval
+  i8 <- i7 + interval
+  
+  inter_1 <- nrow(current_user_logs %>% filter(timestamp <= i1) %>% filter(action == 'Label Botnet' | action == 'Label Normal'))
+  if(inter_1 != 0){
+    number_correct_1 <- sum((current_user_result$result_count)[(count+1):(count + inter_1)])
+    count <- count + inter_1
+    porcent_1 <- number_correct_1/inter_1
+  }
+  
+  
+  inter_2 <- nrow(current_user_logs %>% filter(timestamp > i1 & timestamp < i2) %>% filter(action == 'Label Botnet' | action == 'Label Normal'))
+  if(inter_2 != 0){
+    number_correct_2 <- sum((current_user_result$result_count)[(count+1):(count + inter_2)])
+    count <- count + inter_2
+    porcent_2 <- number_correct_2/inter_2
+  }
+  
+  
+  inter_3 <- nrow(current_user_logs %>% filter(timestamp > i2 & timestamp < i3) %>% filter(action == 'Label Botnet' | action == 'Label Normal'))
+  if(inter_3 != 0){
+    number_correct_3 <- sum((current_user_result$result_count)[(count+1):(count + inter_3)])
+    count <- count + inter_3
+    porcent_3 <- number_correct_3/inter_3
+  }
+  
+  inter_4 <- nrow(current_user_logs %>% filter(timestamp > i3 & timestamp < i4) %>% filter(action == 'Label Botnet' | action == 'Label Normal'))
+  if(inter_4 != 0){
+    number_correct_4 <- sum((current_user_result$result_count)[(count+1):(count + inter_4)])
+    count <- count + inter_4
+    porcent_4 <- number_correct_4/inter_4
+  }
+  
+  inter_5 <- nrow(current_user_logs %>% filter(timestamp > i4 & timestamp < i5) %>% filter(action == 'Label Botnet' | action == 'Label Normal'))
+  if(inter_5 != 0){
+    number_correct_5 <- sum((current_user_result$result_count)[(count+1):(count + inter_5)])
+    count <- count + inter_5
+    porcent_5 <- number_correct_5/inter_5
+  }
+  
+  inter_6 <- nrow(current_user_logs %>% filter(timestamp > i5 & timestamp < i6) %>% filter(action == 'Label Botnet' | action == 'Label Normal'))
+  if(inter_6 != 0){
+    number_correct_6 <- sum((current_user_result$result_count)[(count+1):(count + inter_6)])
+    count <- count + inter_6
+    porcent_6 <- number_correct_6/inter_6
+  }
+  
+  inter_7 <- nrow(current_user_logs %>% filter(timestamp > i6 & timestamp < i7) %>% filter(action == 'Label Botnet' | action == 'Label Normal'))
+  if(inter_7 != 0){
+    number_correct_7 <- sum((current_user_result$result_count)[(count+1):(count + inter_7)])
+    count <- count + inter_7
+    porcent_7 <- number_correct_7/inter_7
+  }
+  
+  inter_8 <- nrow(current_user_logs %>% filter(timestamp > i7 & timestamp < i8) %>% filter(action == 'Label Botnet' | action == 'Label Normal'))
+  if(inter_8 != 0){
+    number_correct_8 <- sum((current_user_result$result_count)[(count+1):(count + inter_8)])
+    count <- count + inter_8
+    porcent_8 <- number_correct_8/inter_8
+  }
+  
+  result <- rbind(result, c(paste('u',i,sep = ''), inter_1, inter_2, inter_3, inter_4, inter_5, inter_6, inter_7, inter_8, number_correct_1, number_correct_2,number_correct_3,number_correct_4,number_correct_5,number_correct_6,number_correct_7,number_correct_8, porcent_1, porcent_2, porcent_3, porcent_4, porcent_5, porcent_6, porcent_7, porcent_8))
+}
+
+names(result) <- c('user','first_q', 'second_q', 'third_q', 'four_q', 'five_q', 'six_q', 'seven_q', 'eight_q','c1','c2','c3','c4','c5','c6','c7','c8','p1','p2','p3','p4','p5','p6','p7','p8')
+
+result
+```
+
+```{r}
+labels_by_quarter <- result
+labels_by_quarter.bkp <- labels_by_quarter
+
+labels_by_quarter$user <- as.factor(labels_by_quarter$user)
+
+cols <- c('first_q', 'second_q', 'third_q', 'four_q', 'five_q', 'six_q', 'seven_q', 'eight_q','c1','c2','c3','c4','c5','c6','c7','c8','p1','p2','p3','p4','p5','p6','p7','p8')
+#labels_by_quarter[cols] <- lapply(labels_by_quarter[cols], numeric)
+
+labels_by_quarter$first_q<- as.numeric(labels_by_quarter$first_q)
+labels_by_quarter$second_q<- as.numeric(labels_by_quarter$second_q)
+labels_by_quarter$third_q <- as.numeric(labels_by_quarter$third_q)
+labels_by_quarter$four_q<- as.numeric(labels_by_quarter$four_q)
+labels_by_quarter$five_q<- as.numeric(labels_by_quarter$five_q)
+labels_by_quarter$six_q<- as.numeric(labels_by_quarter$six_q)
+labels_by_quarter$seven_q<- as.numeric(labels_by_quarter$seven_q)
+labels_by_quarter$eight_q<- as.numeric(labels_by_quarter$eight_q)
+labels_by_quarter$c1<- as.numeric(labels_by_quarter$c1)
+labels_by_quarter$c2<- as.numeric(labels_by_quarter$c2)
+labels_by_quarter$c3<- as.numeric(labels_by_quarter$c3)
+labels_by_quarter$c4<- as.numeric(labels_by_quarter$c4)
+labels_by_quarter$c5<- as.numeric(labels_by_quarter$c5)
+labels_by_quarter$c6<- as.numeric(labels_by_quarter$c6)
+labels_by_quarter$c7<- as.numeric(labels_by_quarter$c7)
+labels_by_quarter$c8<- as.numeric(labels_by_quarter$c8)
+labels_by_quarter$p1<- as.numeric(labels_by_quarter$p1)
+labels_by_quarter$p2<- as.numeric(labels_by_quarter$p2)
+labels_by_quarter$p3<- as.numeric(labels_by_quarter$p3)
+labels_by_quarter$p4<- as.numeric(labels_by_quarter$p4)
+labels_by_quarter$p5<- as.numeric(labels_by_quarter$p5)
+labels_by_quarter$p6<- as.numeric(labels_by_quarter$p6)
+labels_by_quarter$p7<- as.numeric(labels_by_quarter$p7)
+labels_by_quarter$p8<- as.numeric(labels_by_quarter$p8)
+
+#labels_by_quarter <- labels_by_quarter %>% filter(first_q != 0 | second_q != 0 | third_q != 0 | four_q != 0)
+labels_by_quarter <- labels_by_quarter %>% filter(user != 'u11')
+labels_by_quarter <- labels_by_quarter %>% filter(user != 'u3')
+labels_by_quarter <- labels_by_quarter %>% filter(user != 'u5')
+
+labels_by_quarter
+```
+
+```{r}
+library(ggplot2)
+library(reshape)
+library(plyr)
+labels_by_quarter.aux <- labels_by_quarter
+
+labels_by_quarter.aux <- labels_by_quarter.aux[,c(1:9)]
+#labels_by_quarter.aux <- labels_by_quarter.aux[,c('user','p1','p2','p3','p4','p5','p6','p7','p8')]
+#names(labels_by_quarter.aux) <- c('user','first','second','third','four', 'five', 'six', 'seven', 'eight')
+names(labels_by_quarter.aux) <- c('user','1','2','3','4', '5', '6', '7', '8')
+
+labels_by_quarter.m <- melt(labels_by_quarter.aux)
+labels_by_quarter.m <- ddply(labels_by_quarter.m, .(variable), transform, rescale = rescale(value))
+
+
+base_size <- 9
+
+p <- ggplot(labels_by_quarter.m, aes(variable, user)) + geom_tile(aes(fill = rescale), colour = "white") + scale_fill_gradient(low = "white",high = "steelblue")
+
+p + theme_grey(base_size = base_size) + 
+  labs(title="", 
+         caption = "Source: RiskID User Interaction Result",
+         x = "time intervals",
+         y = "users", 
+         color = NULL) +
+  scale_x_discrete(expand = c(0, 0)) + 
+  scale_y_discrete(expand = c(0, 0)) + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(size = 14, colour = "grey50"),
+        axis.text.y = element_text(size = 12, colour = "grey50"),
+        axis.title = element_text(size = 18))
+
+```
+
+#Heatmaps
+```{r}
+#labels_by_quarter.aux.simple <- labels_by_quarter.aux %>% filter(user == 'u2' | user == 'u12' | user == 'u5' | user == 'u15')
+#labels_by_quarter.aux.csm <- labels_by_quarter.aux %>% filter(user == 'u11' | user == 'u13' | user == 'u16' | user == 'u3' | user == 'u6')
+#labels_by_quarter.aux.lpm <- labels_by_quarter.aux %>% filter(user == 'u10' | user == 'u4' | user == 'u8')
+#labels_by_quarter.aux.full <- labels_by_quarter.aux %>% filter(user == 'u14' | user == 'u17' | user == 'u7' | user == 'u9')
+```
+
+#Heatmap simple
+```{r}
+p_simple <- ggplot(labels_by_quarter.m %>% filter(user == 'u2' | user == 'u12' | user == 'u5' | user == 'u15'), aes(user,variable)) + geom_tile(aes(fill = rescale), colour = "white") + scale_fill_gradient(low = "white",high = "steelblue")
+
+p_simple <- p_simple + theme_grey(base_size = base_size) + 
+  labs(title="", 
+         caption = "",
+         x = "users (Simple)",
+         y = "time intervals", 
+         color = NULL) +
+  scale_x_discrete(expand = c(0, 0)) + 
+  scale_y_discrete(expand = c(0, 0)) + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(size = 14, colour = "grey50"),
+        axis.text.y = element_text(size = 12, colour = "grey50"),
+        axis.title = element_text(size = 18))
+p_simple
+```
+
+#Heatmap csm
+```{r}
+p_csm <- ggplot(labels_by_quarter.m %>% filter(user == 'u11' | user == 'u13' | user == 'u16' | user == 'u3' | user == 'u6'), aes(user,variable)) + geom_tile(aes(fill = rescale), colour = "white") + scale_fill_gradient(low = "white",high = "steelblue")
+
+p_csm <- p_csm + theme_grey(base_size = base_size) + 
+  labs(title="", 
+         caption = "",
+         x = "users (CSM)",
+         y = "time intervals", 
+         color = NULL) +
+  scale_x_discrete(expand = c(0, 0)) + 
+  scale_y_discrete(expand = c(0, 0)) + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(size = 14, colour = "grey50"),
+        axis.text.y = element_text(size = 12, colour = "grey50"),
+        axis.title = element_text(size = 18))
+p_csm
+```
+
+#Heatmap lpm
+```{r}
+p_lpm <- ggplot(labels_by_quarter.m %>% filter(user == 'u10' | user == 'u4' | user == 'u8'), aes(user, variable)) + geom_tile(aes(fill = rescale), colour = "white") + scale_fill_gradient(low = "white",high = "steelblue")
+
+p_lpm <- p_lpm + theme_grey(base_size = base_size) + 
+  labs(title="", 
+         caption = "",
+         x = "users (LPM)",
+         y = "time intervals", 
+         color = NULL) +
+  scale_x_discrete(expand = c(0, 0)) + 
+  scale_y_discrete(expand = c(0, 0)) + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(size = 14, colour = "grey50"),
+        axis.text.y = element_text(size = 12, colour = "grey50"),
+        axis.title = element_text(size = 18))
+p_lpm
+```
+
+#Heatmap full
+```{r}
+p_full <- ggplot(labels_by_quarter.m %>% filter(user == 'u14' | user == 'u17' | user == 'u7' | user == 'u9'), aes(user, variable)) + geom_tile(aes(fill = rescale), colour = "white") + scale_fill_gradient(low = "white",high = "steelblue")
+
+p_full <- p_full + theme_grey(base_size = base_size) + 
+  labs(title="", 
+         caption = "",
+         x = "users (Full)",
+         y = "time intervals", 
+         color = NULL) +
+  scale_x_discrete(expand = c(0, 0)) + 
+  scale_y_discrete(expand = c(0, 0)) + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(size = 14, colour = "grey50"),
+        axis.text.y = element_text(size = 12, colour = "grey50"),
+        axis.title = element_text(size = 18))
+p_full
+
+```
+
+#Ploting Heatmap results in single graph
+```{r}
+multiplot(p_simple, p_csm, p_lpm, p_full, cols=2)
+```
+
+
+#Percent of labels in time
+##Simple
+```{r}
+sr_2.simple <- sr_2 %>% filter(app_version == ' simple app')
+sr_2.simple
+
+#U15
+sr_2.simple_u15 <- sr_2.simple %>% filter(user == 15) %>% arrange(timestamp)
+initial_time <- sr_2.simple_u15$timestamp[1]
+only_label <- sr_2.simple_u15 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_15 <- final_labeling_time - initial_time
+number_of_labels_15 <- nrow(only_label)
+number_of_actions_15 <- nrow(sr_2.simple_u15 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_15 <- nrow(sr_2.simple_u15 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_15 <- nrow(sr_2.simple_u15 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_15 <- nrow(sr_2.simple_u15 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U12
+sr_2.simple_u12 <- sr_2.simple %>% filter(user == 12) %>% arrange(timestamp)
+initial_time <- sr_2.simple_u12$timestamp[1]
+only_label <- sr_2.simple_u12 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_12 <- final_labeling_time - initial_time
+number_of_labels_12 <- nrow(only_label)
+number_of_actions_12 <- nrow(sr_2.simple_u12 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_12 <- nrow(sr_2.simple_u12 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_12 <- nrow(sr_2.simple_u12 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_12 <- nrow(sr_2.simple_u12 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U2
+sr_2.simple_u2 <- sr_2.simple %>% filter(user == 2) %>% arrange(timestamp)
+initial_time <- sr_2.simple_u2$timestamp[1]
+only_label <- sr_2.simple_u2 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_2 <- final_labeling_time - initial_time
+number_of_labels_2 <- nrow(only_label)
+number_of_actions_2 <- nrow(sr_2.simple_u2 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_2 <- nrow(sr_2.simple_u2 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_2 <- nrow(sr_2.simple_u2 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_2 <- nrow(sr_2.simple_u2 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+total_label <- number_of_labels_15 + number_of_labels_12 + number_of_labels_2
+percent_of_time <- (labeling_time_15 + labeling_time_12 + labeling_time_2) / total_label
+percent_of_actions <- (number_of_actions_15 + number_of_actions_12 + number_of_actions_2) / total_label
+percent_of_filter <- (number_of_filter_15 + number_of_filter_12 + number_of_filter_2) / total_label
+percent_of_details <- (number_of_details_15 + number_of_details_12 + number_of_details_2) / total_label
+percent_of_letter <- (number_of_letter_15 + number_of_letter_12 + number_of_letter_2) / total_label
+
+c('Simple', percent_of_time, percent_of_actions, percent_of_filter, percent_of_details, percent_of_letter)
+
+simple_result <- data.frame('version'=c('Simple', 'Simple', 'Simple'),
+                            'time_for_label'=c(labeling_time_15, labeling_time_12, labeling_time_2),
+                            'actions_for_label'=c(number_of_actions_15, number_of_actions_12, number_of_actions_2),
+                            'filter_for_label'=c(number_of_filter_15, number_of_filter_12, number_of_filter_2),
+                            'details_for_label'=c(number_of_details_15, number_of_details_12, number_of_details_2),
+                            'letter_for_label'=c(number_of_letter_15, number_of_letter_12, number_of_letter_2))
+simple_result
+```
+##CSM
+```{r}
+sr_2.csm <- sr_2 %>% filter(app_version == ' reorder add-on')
+sr_2.csm
+
+#U6
+sr_2.u6 <- sr_2.csm %>% filter(user == 6) %>% arrange(timestamp)
+initial_time <- sr_2.u6$timestamp[1]
+only_label <- sr_2.u6 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_6 <- final_labeling_time - initial_time
+number_of_labels_6 <- nrow(only_label)
+number_of_actions_6 <- nrow(sr_2.u6 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_6 <- nrow(sr_2.u6 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_6 <- nrow(sr_2.u6 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_6 <- nrow(sr_2.u6 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U13
+sr_2.u13 <- sr_2.csm %>% filter(user == 13) %>% arrange(timestamp)
+initial_time <- sr_2.u13$timestamp[1]
+only_label <- sr_2.u13 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_13 <- final_labeling_time - initial_time
+number_of_labels_13 <- nrow(only_label)
+number_of_actions_13 <- nrow(sr_2.u13 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_13 <- nrow(sr_2.u13 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_13 <- nrow(sr_2.u13 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_13 <- nrow(sr_2.u13 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U16
+sr_2.u16 <- sr_2.csm %>% filter(user == 16) %>% arrange(timestamp)
+initial_time <- sr_2.u16$timestamp[1]
+only_label <- sr_2.u16 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_16 <- final_labeling_time - initial_time
+number_of_labels_16 <- nrow(only_label)
+number_of_actions_16 <- nrow(sr_2.u16 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_16 <- nrow(sr_2.u16 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_16 <- nrow(sr_2.u16 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_16 <- nrow(sr_2.u16 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+total_label <- number_of_labels_6 + number_of_labels_13 + number_of_labels_16
+percent_of_time <- (labeling_time_6 + labeling_time_13 + labeling_time_16) / total_label
+percent_of_actions <- (number_of_actions_6 + number_of_actions_13 + number_of_actions_16) / total_label
+percent_of_filter <- (number_of_filter_6 + number_of_filter_13 + number_of_filter_16) / total_label
+percent_of_details <- (number_of_details_6 + number_of_details_13 + number_of_details_16) / total_label
+percent_of_letter <- (number_of_letter_6 + number_of_letter_13 + number_of_letter_16) / total_label
+
+c('CSM', percent_of_time, percent_of_actions, percent_of_filter, percent_of_details, percent_of_letter)
+
+csm_result <- data.frame('version'=c('CSM', 'CSM', 'CSM'),
+                            'time_for_label'=c(labeling_time_6, labeling_time_13, labeling_time_16),
+                            'actions_for_label'=c(number_of_actions_6, number_of_actions_13, number_of_actions_16),
+                            'filter_for_label'=c(number_of_filter_6, number_of_filter_13, number_of_filter_16),
+                            'details_for_label'=c(number_of_details_6, number_of_details_13, number_of_details_16),
+                            'letter_for_label'=c(number_of_letter_6, number_of_letter_13, number_of_letter_16))
+csm_result
+```
+
+##LPM
+```{r}
+sr_2.lpm <- sr_2 %>% filter(app_version == ' prediction add-on')
+sr_2.lpm
+
+#U10
+sr_2.u10 <- sr_2.lpm %>% filter(user == 10) %>% arrange(timestamp)
+initial_time <- sr_2.u10$timestamp[1]
+only_label <- sr_2.u10 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_10 <- final_labeling_time - initial_time
+number_of_labels_10 <- nrow(only_label)
+number_of_actions_10 <- nrow(sr_2.u10 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_10 <- nrow(sr_2.u10 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_10 <- nrow(sr_2.u10 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_10 <- nrow(sr_2.u10 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U4
+sr_2.u4 <- sr_2.lpm %>% filter(user == 4) %>% arrange(timestamp)
+initial_time <- sr_2.u4$timestamp[1]
+only_label <- sr_2.u4 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_4 <- final_labeling_time - initial_time
+number_of_labels_4 <- nrow(only_label)
+number_of_actions_4 <- nrow(sr_2.u4 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_4 <- nrow(sr_2.u4 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_4 <- nrow(sr_2.u4 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_4 <- nrow(sr_2.u4 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U8
+sr_2.u8 <- sr_2.lpm %>% filter(user == 8) %>% arrange(timestamp)
+initial_time <- sr_2.u8$timestamp[1]
+only_label <- sr_2.u8 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_8 <- final_labeling_time - initial_time
+number_of_labels_8 <- nrow(only_label)
+number_of_actions_8 <- nrow(sr_2.u8 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_8 <- nrow(sr_2.u8 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_8 <- nrow(sr_2.u8 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_8 <- nrow(sr_2.u8 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+total_label <- number_of_labels_10 + number_of_labels_4 + number_of_labels_8
+percent_of_time <- (labeling_time_10 + labeling_time_4 + labeling_time_8) / total_label
+percent_of_actions <- (number_of_actions_10 + number_of_actions_4 + number_of_actions_8) / total_label
+percent_of_filter <- (number_of_filter_10 + number_of_filter_4 + number_of_filter_8) / total_label
+percent_of_details <- (number_of_details_10 + number_of_details_4 + number_of_details_8) / total_label
+percent_of_letter <- (number_of_letter_10 + number_of_letter_4 + number_of_letter_8) / total_label
+
+c('LPM', percent_of_time, percent_of_actions, percent_of_filter, percent_of_details, percent_of_letter)
+
+lpm_result <- data.frame('version'=c('LPM', 'LPM', 'LPM'),
+                            'time_for_label'=c(labeling_time_10, labeling_time_4, labeling_time_8),
+                            'actions_for_label'=c(number_of_actions_10, number_of_actions_4, number_of_actions_8),
+                            'filter_for_label'=c(number_of_filter_10, number_of_filter_4, number_of_filter_8),
+                            'details_for_label'=c(number_of_details_10, number_of_details_4, number_of_details_8),
+                            'letter_for_label'=c(number_of_letter_10, number_of_letter_4, number_of_letter_8))
+lpm_result
+```
+
+##Full
+```{r}
+sr_2.full <- sr_2 %>% filter(app_version == ' full app')
+sr_2.full
+
+#U14
+sr_2.u14 <- sr_2.full %>% filter(user == 14) %>% arrange(timestamp)
+initial_time <- sr_2.u14$timestamp[1]
+only_label <- sr_2.u14 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_14 <- final_labeling_time - initial_time
+number_of_labels_14 <- nrow(only_label)
+number_of_actions_14 <- nrow(sr_2.u14 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_14 <- nrow(sr_2.u14 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_14 <- nrow(sr_2.u14 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_14 <- nrow(sr_2.u14 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U17
+sr_2.u17 <- sr_2.full %>% filter(user == 17) %>% arrange(timestamp)
+initial_time <- sr_2.u17$timestamp[1]
+only_label <- sr_2.u17 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_17 <- final_labeling_time - initial_time
+number_of_labels_17 <- nrow(only_label)
+number_of_actions_17 <- nrow(sr_2.u17 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_17 <- nrow(sr_2.u17 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_17 <- nrow(sr_2.u17 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_17 <- nrow(sr_2.u17 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U7
+sr_2.u7 <- sr_2.full %>% filter(user == 7) %>% arrange(timestamp)
+initial_time <- sr_2.u7$timestamp[1]
+only_label <- sr_2.u7 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_7 <- final_labeling_time - initial_time
+number_of_labels_7 <- nrow(only_label)
+number_of_actions_7 <- nrow(sr_2.u7 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_7 <- nrow(sr_2.u7 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_7 <- nrow(sr_2.u7 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_7 <- nrow(sr_2.u7 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+#U9
+sr_2.u9 <- sr_2.full %>% filter(user == 9) %>% arrange(timestamp)
+initial_time <- sr_2.u9$timestamp[1]
+only_label <- sr_2.u9 %>% filter(action == 'Label Normal' | action == 'Label Botnet') %>% arrange(timestamp)
+final_labeling_time <- only_label$timestamp[nrow(only_label)]
+
+labeling_time_9 <- final_labeling_time - initial_time
+number_of_labels_9 <- nrow(only_label)
+number_of_actions_9 <- nrow(sr_2.u9 %>% filter(timestamp < final_labeling_time) %>% filter(action != 'Label Normal' & action != 'Label Botnet'))
+number_of_filter_9 <- nrow(sr_2.u9 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Filter'))
+number_of_details_9 <- nrow(sr_2.u9 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Connection' | action == 'Close Connection'))
+number_of_letter_9 <- nrow(sr_2.u9 %>% filter(timestamp < final_labeling_time) %>% filter(action == 'Show Sequence Connection' | action == 'Sequence Connection'))
+
+total_label <- number_of_labels_14 + number_of_labels_17 + number_of_labels_7 + number_of_labels_9
+percent_of_time <- (labeling_time_14 + labeling_time_17 + labeling_time_7 + labeling_time_9) / total_label
+percent_of_actions <- (number_of_actions_14 + number_of_actions_17 + number_of_actions_7 + number_of_actions_9) / total_label
+percent_of_filter <- (number_of_filter_14 + number_of_filter_17 + number_of_filter_7 + number_of_filter_9) / total_label
+percent_of_details <- (number_of_details_14 + number_of_details_17 + number_of_details_7 + number_of_details_9) / total_label
+percent_of_letter <- (number_of_letter_14 + number_of_letter_17 + number_of_letter_7 + number_of_letter_9) / total_label
+
+c('Full', percent_of_time, percent_of_actions, percent_of_filter, percent_of_details, percent_of_letter)
+
+full_result <- data.frame('version'=c('Full', 'Full', 'Full', 'Full'),
+                            'time_for_label'=c(labeling_time_14, labeling_time_17, labeling_time_7, labeling_time_9),
+                            'actions_for_label'=c(number_of_actions_14, number_of_actions_17, number_of_actions_7, number_of_actions_9),
+                            'filter_for_label'=c(number_of_filter_14, number_of_filter_17, number_of_filter_7, number_of_filter_9),
+                            'details_for_label'=c(number_of_details_14, number_of_details_17, number_of_details_7, number_of_details_9),
+                            'letter_for_label'=c(number_of_letter_14, number_of_letter_17, number_of_letter_7, number_of_letter_9))
+full_result
+```
+
+## Graphical Result
+```{r}
+all_result <- rbind(simple_result,csm_result)
+all_result <- rbind(all_result,lpm_result)
+all_result <- rbind(all_result,full_result)
+
+ggplot(data = all_result, mapping = aes(x = version, y = time_for_label, color = version)) + 
+  geom_boxplot()
+
+time_result_graph <- ggplot(all_result, aes(x=version, y = time_for_label, color = version))+
+  geom_boxplot()+
+  #scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="",
+         x = "",
+         y="avg. time per label", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    #scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    scale_x_discrete(limits=c('Simple','CSM','LPM','Full'))+
+    theme_bw() +
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 18),
+          legend.position = "none", 
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+
+actions_result_graph <- ggplot(all_result, aes(x=version, y = actions_for_label, color = version))+
+  geom_boxplot()+
+  #scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="",
+         x = "",
+         y="avg. actions per label", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    #scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    scale_x_discrete(limits=c('Simple','CSM','LPM','Full'))+
+    theme_bw() +
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 18),
+          legend.position = "none", 
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+
+filter_result_graph <- ggplot(all_result, aes(x=version, y = filter_for_label, color = version))+
+  geom_boxplot()+
+  #scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="",
+         x = "",
+         y="avg. filters per label", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    #scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    scale_x_discrete(limits=c('Simple','CSM','LPM','Full'))+
+    theme_bw() +
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 18),
+          legend.position = "none", 
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+
+details_result_graph <- ggplot(all_result, aes(x=version, y = details_for_label, color = version))+
+  geom_boxplot()+
+  #scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="",
+         x = "",
+         y="avg. details per label", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    #scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    scale_x_discrete(limits=c('Simple','CSM','LPM','Full'))+
+    theme_bw() +
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 18),
+          legend.position = "none",  
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+
+letter_result_graph <- ggplot(all_result, aes(x=version, y = letter_for_label, color = version))+
+  geom_boxplot()+
+  #scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="",
+         x = "app version",
+         y="avg. model behavior per label", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    #scale_fill_manual("", values = c("correct" = "#00bfc4ff", "incorrect" = "#f8766dff")) + 
+    scale_x_discrete(limits=c('Simple','CSM','LPM','Full'))+
+    theme_bw() +
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 18),
+          legend.position = "bottom", 
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+
+multiplot(time_result_graph, actions_result_graph, filter_result_graph, details_result_graph, letter_result_graph, cols=1)
+
+
+
+names(all_result) <- c('version','time','actions','filters','details','letters')
+test_aux <- melt(all_result)
+
+ggplot(data = test_aux) + 
+  geom_bar(mapping = aes(x = variable, y = value, fill = version))
+```
+
+```{r}
+##### convert strings to timestamsps
+df.log.sm$timeposix<-as.POSIXct(df.log.sm$timestamp, format="%Y/%m/%d_%H.%M.%S")
+##### create a duration field for each entry
+df.log.sm$timeduration<-0
+
+for(user in df.log.sm$user){
+  df.log.sm[df.log.sm$user_name == user,]$timeduration<-difftime(df.log.sm[df.log.sm$user_name==user,]$timeposix, df.log.sm[df.log.sm$user_name == user,]$timeposix[1])
+}
+```
+
+#Creating complex bar plot (no funciono como queria al final)
+```{r}
+dt <- read.csv('/home/jguerra/repo/ranking_with_lengt_of_word_10.txt', sep = '|', header = T)
+dt$pattern <- as.factor(dt$pattern)
+#dt$label <- as.factor(dt$label)
+
+patterns=unique(dt$pattern)[1:90]
+min_total_freq=50
+for (pattern in patterns){
+  if (dt[which(dt$pattern==pattern),2][1]>min_total_freq){
+    
+    pattern2=dt[which(dt$pattern==pattern),c(3,4)]
+    pattern2=cbind(pattern2,rep(0))
+    
+    pattern2[grep('Normal',pattern2$label),3]=0
+    pattern2[grep('Botnet',pattern2$label),3]=1
+    colnames(pattern2)[3]='type'
+    
+    pattern2=cbind(pattern2,rep(0))
+    pattern2[,4]=pattern2$label_frequency/sum(pattern2$label_frequency)*100
+    colnames(pattern2)[4]='percent'
+    
+    pattern2=pattern2[order(pattern2$label),]
+    cols=c()
+    cols[pattern2$type==0]='blue'
+    cols[pattern2$type==1]='red'
+    barplot(cbind(pattern2$percent),col=cols,
+                   las=1,names.arg =paste(pattern," [",sum(pattern2$label_frequency),"]"),yaxt='n',cex.names=0.55)
+    
+  }
+}
+
+pattern <- 'U.U,U.U,U.'
+pattern2=dt[which(dt$pattern==pattern),c(3,4)]
+pattern2=cbind(pattern2,rep(0))
+
+pattern2[grep('Normal',pattern2$label),3]=0
+pattern2[grep('Botnet',pattern2$label),3]=1
+colnames(pattern2)[3]='type'
+
+pattern2=cbind(pattern2,rep(0))
+pattern2[,4]=pattern2$label_frequency/sum(pattern2$label_frequency)*100
+colnames(pattern2)[4]='percent'
+
+pattern2=pattern2[order(pattern2$label),]
+cols=c()
+cols[pattern2$type==0]='blue'
+cols[pattern2$type==1]='red'
+barplot(cbind(pattern2$percent),col=cols,
+               las=1,names.arg =paste(pattern," [",sum(pattern2$label_frequency),"]"),yaxt='n',cex.names=0.55)
+```
+
+#Test examples
+```{r}
+# Data in two numeric vectors
+women_weight <- c(38.9, 61.2, 73.3, 21.8, 63.4, 64.6, 48.4, 48.8, 48.5)
+men_weight <- c(67.8, 60, 63.4, 76, 89.4, 73.3, 67.3, 61.3, 62.4) 
+# Create a data frame
+my_data <- data.frame( 
+                group = rep(c("Woman", "Man"), each = 9),
+                weight = c(women_weight,  men_weight)
+                )
+
+my_data
+```
+
+```{r}
+res <- wilcox.test(women_weight, men_weight)
+res
+```
+
+```{r}
+res <- wilcox.test(weight ~ group, data = my_data,
+                   exact = FALSE)
+res
+```
+
+#T-Test for version ~ accuracy
+```{r}
+l_result <- label_result_accuracy[,c('version','accuracy')]
+l_result
+
+level_1 <- l_result %>% filter(version == 'Full' | version == 'LPM')
+level_2 <- l_result %>% filter(version == 'Full' | version == 'CSM')
+level_3 <- l_result %>% filter(version == 'Full' | version == 'Simple')
+level_4 <- l_result %>% filter(version == 'LPM' | version == 'CSM')
+level_5 <- l_result %>% filter(version == 'LPM' | version == 'Simple')
+level_6 <- l_result %>% filter(version == 'CSM' | version == 'Simple')
+
+
+
+res <- wilcox.test(correct_label ~ version, data = label_result_accuracy[,c('version','correct_label')] %>% filter(version == 'LPM' | version == 'Simple'),
+                   exact = FALSE)
+res
+```
+
+```{r}
+res1 <- wilcox.test(accuracy ~ version, data = level_1,
+                   exact = FALSE)
+res1
+```
+
+```{r}
+res2 <- wilcox.test(accuracy ~ version, data = level_2,
+                   exact = FALSE)
+res2
+```
+
+```{r}
+res3 <- wilcox.test(accuracy ~ version, data = level_3,
+                   exact = FALSE)
+res3
+```
+
+```{r}
+res4 <- wilcox.test(accuracy ~ version, data = level_4,
+                   exact = FALSE)
+res4
+```
+
+```{r}
+res5 <- wilcox.test(accuracy ~ version, data = level_5,
+                   exact = FALSE)
+res5
+```
+
+```{r}
+res6 <- wilcox.test(accuracy ~ version, data = level_6,
+                   exact = FALSE)
+res6
+```
+
+
+## T-Test for version ~ strategy analisys(time, actions, filter, details, letter)
+```{r}
+all_result
+
+level_1 <- all_result %>% filter(version == 'Full' | version == 'LPM')
+level_2 <- all_result %>% filter(version == 'Full' | version == 'CSM')
+level_3 <- all_result %>% filter(version == 'Full' | version == 'Simple')
+level_4 <- all_result %>% filter(version == 'LPM' | version == 'CSM')
+level_5 <- all_result %>% filter(version == 'LPM' | version == 'Simple')
+level_6 <- all_result %>% filter(version == 'CSM' | version == 'Simple')
+
+
+```
+
+#Useful function
+```{r}
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+#Post-questionary analisys
+```{r}
+q1 <- read.csv('/home/jguerra/riskID_study_results/Post-Questionnaire1-TLX.csv', stringsAsFactors = F, header = T)
+q2 <- read.csv('/home/jguerra/riskID_study_results/Post-Questionnaire2-SUS.csv', stringsAsFactors = F, header = T)
+q3 <- read.csv('/home/jguerra/riskID_study_results/Post-Questionnaire3.csv', stringsAsFactors = F, header = T)
+
+q1.tlx <- q1
+#q2
+#q3
+
+names(q1.tlx) <- c('Date-Time', 'expected_success', 'hard_to_perform', 'frustration', 'mental_demand', 'physical_demand', 'temporal_demand')
+q1.tlx <- q1.tlx[c(16:31),]
+```
+
+```{r}
+q1.tlx_aux <- q1.tlx
+names(q1.tlx_aux) <- c('Date-Time', 'expected success', 'hard to perform', 'frustration', 'mental demand', 'physical demand', 'temporal demand')
+test_aux <- melt(q1.tlx_aux)
+#ggplot(data = test_aux, mapping = aes(x = variable, y = value)) + 
+#  geom_boxplot()
+
+q1.tlx_result_graph <- ggplot(data = test_aux, mapping = aes(x = variable, y = value)) + 
+  geom_boxplot()+
+  #scale_y_continuous(labels = percent_format())+
+    labs(title="", 
+         caption="",
+         x = "Evaluation",
+         y="Questionnaire Response", 
+         color=NULL) + 
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          legend.text=element_text(size=12),
+          legend.justification=c(1,1),legend.position=c(1,1),legend.title=element_blank()) + 
+    scale_x_discrete(limits=c('expected success','hard to perform','frustration','mental demand', 'physical demand', 'temporal demand'))+
+    theme_bw() +
+    theme(axis.text = element_text(size = 18),
+          axis.title = element_text(size = 18),
+          axis.text.x = element_text(angle = 40, hjust = 1),
+          legend.position = "bottom", 
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+
+q1.tlx_result_graph
+```

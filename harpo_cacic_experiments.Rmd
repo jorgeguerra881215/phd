@@ -157,7 +157,10 @@ f1_vector
 ```{r}
 #c(200,2000,4000,7000)
 a <- results
+
 b <- as.data.frame(results)
+#write.table(b,file="result_learning_rate_rf_by_connection.txt",sep="|", row.names = F)
+#write.table(feature_vectors_cleaned,file="feature_vector_cleaned.txt",sep="|", row.names = F)
 #b
 result_200 <- b %>% filter(size == 8000)
 result_200 <- result_200 %>% arrange(id)

@@ -1,0 +1,189 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(stringr))
+#suppressMessages(library(ISLR))
+suppressMessages(library(caret))
+suppressMessages(library(doMC))
+#suppressMessages(library(plotly))
+registerDoMC(cores=4)
+```
+
+# Loading Data
+```{r}
+feature_vectors_cleaned <- read.csv('/home/jguerra/datasets/stratosphere/feature_vector_cleaned.txt', stringsAsFactors = F, sep = '|')
+
+feature_vectors_cleaned$class <- as.factor(feature_vectors_cleaned$class)
+feature_vectors_cleaned$subclass <- feature_vectors_cleaned$class
+feature_vectors_cleaned
+
+#feature_vectors_cleaned <- feature_vectors_cleaned[c(1:500),]
+```
+
+# Create training set and testset
+```{r}
+set.seed(212)
+trainIndex <- createDataPartition(feature_vectors_cleaned$class, p=0.70, list=FALSE)
+data_training <- feature_vectors_cleaned[ trainIndex,]
+data_testing <- feature_vectors_cleaned[-trainIndex,]
+
+#data_train = data_train %>% filter(length>5)
+train <- upSample(x = data_training,  y = data_training$class, yname="subclass")
+
+training <- train[,-c(11,16)]
+testing <- data_testing[,-c(11)]
+training
+testing
+
+nrow(training)
+nrow(feature_vectors_cleaned)
+```
+
+```{r}
+ctrl_fast <- trainControl(method="cv", 
+                     repeats=2,
+                     number=10, 
+                     summaryFunction=twoClassSummary,
+                     verboseIter=T,
+                     classProbs=TRUE,
+                     allowParallel = TRUE)
+```
+
+# Data training partitions: cold start study (simple Random Forest)
+```{r}
+set.seed(225)
+size_training <- nrow(training)
+rf_training.sampled_5 <- training[sample(size_training, size_training), ]
+rf_result_5 <- cold_start_data_only_rf(rf_training.sampled_5, testing, settings = ctrl_fast)
+
+rf_data.result <- data.frame(rf_result_5$output$data_count)
+#rf_data.result_t <- data.frame(rf_result_5$output$data_count)
+for(i in c(1:30)){
+  current_seed <- 226 + i
+  set.seed(current_seed)
+  #size_training <- nrow(training)
+  rf_training.sampled_current <- training[sample(size_training, size_training), ]
+  rf_result_current <- cold_start_data_only_rf(rf_training.sampled_current, testing, settings = ctrl_fast)
+  
+  rf_data.result <- cbind(rf_data.result,rf_result_current$output$metric)
+  #rf_data.result_t <- cbind(rf_data.result_t,rf_result_current$output_t$metric)
+}
+ 
+ x <- c('count_of_data')
+ for(i in c(1:30)){
+   x[i+1] <- paste('iteration_',toString(i),sep = "")
+ }
+ x
+ names(rf_data.result) <- x
+ #names(rf_data.result_t) <- x
+ rf_data.result
+ #rf_data.result_t 
+ 
+write.table(rf_data.result,file="random_forest_30_iterations_f1_testing2.txt",sep="|", row.names = F)
+#write.table(rf_data.result_t,file="random_forest_30_iterations_f1_training.txt",sep="|", row.names = F)
+```
+
+
+# Main Function
+```{r}
+cold_start_data_only_rf <- function(training.sampled,testing,settings){
+  size_training <- nrow(training.sampled)
+  split_size_training = size_training / 200
+  testing_result = data.frame(numeric(nrow(testing)))
+  
+  count_random <- foreach(i=1:split_size_training) %dopar% {
+    200 * i
+  }
+  metric <- numeric(split_size_training)
+  metric_t <- numeric(split_size_training)
+  #metric <- foreach(i=1:split_size_training) %do% {
+  for(i in c(1:44)){
+    #library(caret)
+    #library(dplyr)
+    count <- 200 * i
+    aux_training_set <- training.sampled[c(1:count), ]#training[sample(size_training, count), ]
+    new_rfFit <- train(subclass ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+                 data = aux_training_set,
+                 metric="ROC",
+                 method = "rf",
+                 trControl = settings)
+    #Testing predict
+    predsrfprobs <- predict(new_rfFit,testing,type='prob')
+    predsrf <- ifelse(predsrfprobs$botnet >=0.5,'botnet','normal')
+    predsrf <- as.factor(predsrf)
+    cm <- confusionMatrix(predsrf,testing$subclass)
+    metric[i] <- cm$byClass['F1']
+    
+    
+    #Trainning predict
+    #predsrfprobs_t <- predict(new_rfFit,aux_training_set,type='prob')
+    #predsrf_t <- ifelse(predsrfprobs_t$botnet >= 0.5,'botnet','normal')
+    #predsrf_t <- as.factor(predsrf_t)
+    #cm_t <- confusionMatrix(predsrf_t,aux_training_set$subclass)
+    #metric_t[i] <- cm_t$byClass['F1']
+    
+  }
+  output <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric))
+  #output_t <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric_t))
+  #list_result <- list('output' = output, 'output_t' = output_t, 'testing_result' = testing_result)
+  list_result <- list('output' = output, 'testing_result' = testing_result)
+}
+```
+
+# Save Result
+```{r}
+#write.table(rf_data.result,file="random_forest_30_iterations_f1_testing.txt",sep="|", row.names = F)
+#write.table(rf_data.result_t,file="random_forest_30_iterations_f1_training.txt",sep="|", row.names = F)
+```
+
+#test section
+```{r}
+training.sampled <- rf_training.sampled_5
+testing <- testing
+settings <- ctrl_fast
+
+size_training <- nrow(training.sampled)
+  split_size_training = size_training / 200
+  testing_result = data.frame(numeric(nrow(testing)))
+  
+  count_random <- foreach(i=1:split_size_training) %dopar% {
+    200 * i
+  }
+  metric <- numeric(split_size_training)
+  metric_t <- numeric(split_size_training)
+  #metric <- foreach(i=1:split_size_training) %do% {
+  i = 1
+  #for(i in c(1:split_size_training)){
+    #library(caret)
+    #library(dplyr)
+    count <- 200 * i
+    aux_training_set <- training.sampled[c(1:count), ]#training[sample(size_training, count), ]
+    new_rfFit <- train(subclass ~ sp+wp+wnp+snp+ds+dm+dl+ss+sm+sl,
+                 data = aux_training_set,
+                 metric="ROC",
+                 method = "rf",
+                 trControl = settings)
+    #Testing predict
+    predsrfprobs <- predict(new_rfFit,testing,type='prob')
+    predsrf <- ifelse(predsrfprobs$botnet >=0.5,'botnet','normal')
+    predsrf <- as.factor(predsrf)
+    cm <- confusionMatrix(predsrf,testing$subclass)
+    metric[i] <- cm$byClass['F1']
+    
+    
+    #Trainning predict
+    predsrfprobs_t <- predict(new_rfFit,aux_training_set,type='prob')
+    predsrf_t <- ifelse(predsrfprobs_t$botnet >= 0.5,'botnet','normal')
+    cm_t <- confusionMatrix(predsrf_t,aux_training_set$subclass)
+    metric_t[i] <- cm_t$byClass['F1']
+    
+  #}
+  output <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric))
+  output_t <- do.call(rbind, Map(data.frame, data_count=count_random, metric=metric_t))
+  list_result <- list('output' = output, 'output_t' = output_t, 'testing_result' = testing_result)
+```
+ 

@@ -1,0 +1,360 @@
+id,user_token,user_name,action,app_version,class,ip_i,ip_f,port,proto,result,result_count
+38,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,normal,147.32.84.137,82.208.56.89,123,udp,incorrect,0
+72,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,normal,147.32.84.164,74.125.232.192,80,tcp,correct,1
+107,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,74.125.232.204,443,tcp,correct,1
+107,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.170,74.125.232.204,443,tcp,correct,1
+107,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.170,74.125.232.204,443,tcp,correct,1
+128,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.170,74.125.232.201,80,tcp,correct,1
+230,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,normal,147.32.84.170,74.125.232.207,80,tcp,correct,1
+245,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.165,65.54.188.94,25,tcp,correct,1
+285,cs6ja4cjh7xskyb9,Luis,Label Normal, prediction add-on,botnet,147.32.84.165,74.125.93.27,25,tcp,incorrect,0
+308,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,normal,147.32.84.134,195.113.232.74,80,tcp,correct,1
+340,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,64.12.90.65,25,tcp,correct,1
+340,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.165,64.12.90.65,25,tcp,correct,1
+340,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.165,64.12.90.65,25,tcp,correct,1
+355,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.165,66.196.94.104,25,tcp,correct,1
+420,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.165,204.127.217.21,25,tcp,incorrect,0
+421,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,207.115.21.20,25,tcp,correct,1
+421,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.165,207.115.21.20,25,tcp,correct,1
+504,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.165,216.17.3.48,25,tcp,correct,1
+691,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,botnet,147.32.84.165,192.54.112.30,53,udp,incorrect,0
+726,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.165,178.63.49.46,25,tcp,correct,1
+830,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,94.229.67.92,25,tcp,correct,1
+882,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.170,209.85.149.104,80,tcp,correct,1
+923,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,74.125.79.120,80,tcp,correct,1
+956,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,normal,147.32.84.134,91.198.174.233,80,tcp,incorrect,0
+1081,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.134,74.125.232.202,80,tcp,correct,1
+1202,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.134,69.63.190.10,443,tcp,correct,1
+1212,2nz484f8jk7yzaor,Ricardo,Label Botnet, simple app,normal,147.32.84.170,209.133.56.102,80,tcp,incorrect,0
+1212,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,normal,147.32.84.170,209.133.56.102,80,tcp,incorrect,0
+1261,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.170,80.239.149.32,80,tcp,correct,1
+1279,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,208.253.45.68,443,tcp,correct,1
+1279,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.170,208.253.45.68,443,tcp,correct,1
+1324,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.170,81.95.101.9,80,tcp,correct,1
+1355,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,74.125.232.204,443,tcp,correct,1
+1355,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.170,74.125.232.204,443,tcp,correct,1
+1366,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.170,195.113.232.97,80,tcp,correct,1
+1380,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,normal,147.32.84.170,74.125.232.223,80,tcp,incorrect,0
+1391,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,botnet,147.32.84.165,217.163.21.37,80,tcp,incorrect,0
+1433,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,botnet,147.32.84.165,68.67.179.209,80,tcp,incorrect,0
+1477,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.165,65.55.37.104,25,tcp,correct,1
+1505,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.165,205.178.149.7,25,tcp,correct,1
+1505,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,205.178.149.7,25,tcp,correct,1
+1514,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.165,65.55.92.184,25,tcp,correct,1
+1514,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,65.55.92.184,25,tcp,correct,1
+1514,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.165,65.55.92.184,25,tcp,correct,1
+1514,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.165,65.55.92.184,25,tcp,correct,1
+1579,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.165,64.12.90.33,25,tcp,correct,1
+1591,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.165,209.86.93.226,25,tcp,correct,1
+1642,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.165,216.33.127.20,25,tcp,correct,1
+1673,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.170,195.113.232.89,80,tcp,correct,1
+1792,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,normal,147.32.84.164,209.190.121.56,54728,icmp,incorrect,0
+1815,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,normal,147.32.84.170,74.125.232.202,80,tcp,incorrect,0
+1828,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,74.125.232.194,80,tcp,correct,1
+1900,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.164,194.79.52.98,80,tcp,correct,1
+1900,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.164,194.79.52.98,80,tcp,correct,1
+1922,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,74.125.232.192,80,tcp,correct,1
+1959,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.134,194.79.52.199,80,tcp,correct,1
+1959,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.134,194.79.52.199,80,tcp,correct,1
+1993,cs6ja4cjh7xskyb9,Luis,Label Normal, prediction add-on,normal,147.32.84.170,69.58.183.143,80,tcp,correct,1
+2008,susdtwau9cuqsemi,Pablo,Label Normal, full app,normal,147.32.84.170,194.79.54.61,80,tcp,correct,1
+2065,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,normal,147.32.87.36,147.32.80.9,53,udp,incorrect,0
+2122,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,194.79.52.199,80,tcp,correct,1
+2144,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,160.68.117.20,80,tcp,correct,1
+2183,42rw019ynzh0k9,Facundo Chaud,Label Botnet, prediction add-on,botnet,147.32.84.165,64.4.56.103,80,tcp,correct,1
+2269,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,normal,147.32.84.170,209.85.148.106,443,tcp,correct,1
+2291,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,67.195.168.31,25,tcp,correct,1
+2331,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.165,76.96.30.116,25,tcp,correct,1
+2331,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.165,76.96.30.116,25,tcp,correct,1
+2331,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,76.96.30.116,25,tcp,correct,1
+2342,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.165,207.223.8.109,25,tcp,incorrect,0
+2342,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,207.223.8.109,25,tcp,correct,1
+2342,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.165,207.223.8.109,25,tcp,correct,1
+2366,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,209.86.93.226,25,tcp,correct,1
+2366,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.165,209.86.93.226,25,tcp,correct,1
+2366,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.165,209.86.93.226,25,tcp,correct,1
+2370,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.165,64.18.5.11,25,tcp,correct,1
+2370,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,64.18.5.11,25,tcp,correct,1
+2375,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,98.139.175.225,25,tcp,correct,1
+2375,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.165,98.139.175.225,25,tcp,correct,1
+2378,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.165,64.12.175.136,587,tcp,correct,1
+2394,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,98.139.175.224,25,tcp,correct,1
+2429,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,195.50.106.142,25,tcp,correct,1
+2429,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.165,195.50.106.142,25,tcp,correct,1
+2486,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.165,65.54.234.78,443,tcp,correct,1
+2530,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.165,204.127.208.75,25,tcp,incorrect,0
+2530,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,204.127.208.75,25,tcp,correct,1
+2689,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.165,65.55.92.168,25,tcp,correct,1
+2689,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,65.55.92.168,25,tcp,correct,1
+2733,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,botnet,147.32.84.165,174.36.246.56,80,tcp,incorrect,0
+2750,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.165,205.188.159.42,25,tcp,incorrect,0
+2750,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.165,205.188.159.42,25,tcp,correct,1
+2750,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,205.188.159.42,25,tcp,correct,1
+2750,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.165,205.188.159.42,25,tcp,incorrect,0
+2812,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.164,74.125.232.199,80,tcp,correct,1
+2817,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,209.85.148.132,443,tcp,correct,1
+2823,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,209.85.148.103,80,tcp,correct,1
+2875,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,normal,147.32.84.164,74.125.232.197,80,tcp,incorrect,0
+2933,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,80.239.149.17,443,tcp,correct,1
+2998,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,normal,147.32.84.170,74.125.232.193,80,tcp,correct,1
+3053,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,normal,147.32.84.164,81.0.214.198,80,tcp,correct,1
+3151,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.170,74.125.232.204,80,tcp,correct,1
+3163,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,normal,147.32.84.134,92.123.64.160,443,tcp,correct,1
+3167,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,normal,147.32.84.134,195.113.232.82,443,tcp,incorrect,0
+3191,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,74.125.232.221,443,tcp,correct,1
+3209,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,normal,147.32.84.170,91.198.174.233,80,tcp,correct,1
+3243,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,77.75.72.72,80,tcp,correct,1
+3327,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,184.73.171.195,80,tcp,correct,1
+3328,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.134,92.123.64.169,443,tcp,correct,1
+3328,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.134,92.123.64.169,443,tcp,correct,1
+3328,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.134,92.123.64.169,443,tcp,correct,1
+3349,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.134,66.220.158.53,80,tcp,correct,1
+3385,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.165,24.71.223.11,25,tcp,correct,1
+3385,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.165,24.71.223.11,25,tcp,correct,1
+3408,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.134,69.63.190.10,443,tcp,correct,1
+3481,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.170,209.85.148.99,80,tcp,correct,1
+3493,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.134,74.125.232.223,443,tcp,correct,1
+3493,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.134,74.125.232.223,443,tcp,correct,1
+3493,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.134,74.125.232.223,443,tcp,correct,1
+3494,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.134,74.125.232.200,80,tcp,correct,1
+3500,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.134,209.85.149.132,80,tcp,correct,1
+3528,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.134,74.125.232.199,80,tcp,correct,1
+3590,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,normal,147.32.84.134,194.79.52.192,80,tcp,correct,1
+3617,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,209.85.148.103,80,tcp,correct,1
+3673,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,65.55.92.136,25,tcp,correct,1
+3737,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.164,91.198.174.234,80,tcp,correct,1
+3737,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.164,91.198.174.234,80,tcp,correct,1
+3752,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.165,77.238.184.241,25,tcp,correct,1
+3752,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.165,77.238.184.241,25,tcp,correct,1
+3757,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,80.239.149.11,443,tcp,correct,1
+3758,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,92.123.64.192,443,tcp,correct,1
+3787,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,208.65.144.2,25,tcp,correct,1
+3787,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.165,208.65.144.2,25,tcp,correct,1
+3787,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.165,208.65.144.2,25,tcp,correct,1
+3787,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.165,208.65.144.2,25,tcp,correct,1
+3819,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.165,216.33.127.20,25,tcp,correct,1
+3819,gk3o8w8fp1iqkt9,Francisco,Label Normal, prediction add-on,botnet,147.32.84.165,216.33.127.20,25,tcp,incorrect,0
+3828,gk3o8w8fp1iqkt9,Francisco,Label Normal, prediction add-on,botnet,147.32.84.165,64.191.223.39,25,tcp,incorrect,0
+3844,2nz484f8jk7yzaor,Ricardo,Label Botnet, simple app,botnet,147.32.84.165,180.222.96.138,25,tcp,correct,1
+3856,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.170,74.125.232.206,80,tcp,correct,1
+3974,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.170,80.239.149.9,80,tcp,correct,1
+3974,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,80.239.149.9,80,tcp,correct,1
+3983,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.170,69.63.180.43,80,tcp,correct,1
+4000,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,normal,147.32.84.164,74.125.232.216,443,tcp,incorrect,0
+4020,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.170,209.85.148.104,443,tcp,correct,1
+4108,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,normal,147.32.84.134,74.125.232.196,443,tcp,correct,1
+4176,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,normal,147.32.84.170,74.125.232.204,80,tcp,correct,1
+4188,hor3c7v1uy096bt9,Martin,Label Normal, simple app,normal,147.32.84.170,195.113.232.82,80,tcp,correct,1
+4231,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,normal,147.32.84.134,195.168.10.171,80,tcp,correct,1
+4237,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,80.239.149.33,443,tcp,correct,1
+4250,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.134,74.125.232.212,80,tcp,correct,1
+4264,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,74.125.232.201,80,tcp,correct,1
+4264,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.170,74.125.232.201,80,tcp,correct,1
+4264,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,74.125.232.201,80,tcp,correct,1
+4296,hor3c7v1uy096bt9,Martin,Label Normal, simple app,normal,147.32.84.170,195.113.232.89,80,tcp,correct,1
+4296,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,normal,147.32.84.170,195.113.232.89,80,tcp,correct,1
+4302,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,normal,147.32.84.170,147.32.96.171,80,tcp,correct,1
+4302,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.170,147.32.96.171,80,tcp,correct,1
+4323,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.170,2.20.182.17,80,tcp,correct,1
+4340,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.170,174.133.243.2,80,tcp,correct,1
+4352,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,normal,147.32.84.170,66.220.153.19,80,tcp,correct,1
+4360,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,77.75.77.152,80,tcp,correct,1
+4362,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,normal,147.32.84.170,77.75.77.153,80,tcp,correct,1
+4366,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.170,77.75.72.22,80,tcp,correct,1
+4366,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.170,77.75.72.22,80,tcp,correct,1
+4387,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.165,74.125.93.27,25,tcp,correct,1
+4394,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.165,216.157.130.15,25,tcp,incorrect,0
+4394,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.165,216.157.130.15,25,tcp,correct,1
+4433,walg3rp0jrk3ayvi,Gabriel Peralta,Label Botnet, reorder add-on,botnet,147.32.84.165,98.137.54.237,25,tcp,correct,1
+4434,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.165,74.6.140.64,25,tcp,correct,1
+4472,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.165,195.190.13.78,80,tcp,correct,1
+4494,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.165,66.94.237.139,25,tcp,correct,1
+4496,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.165,212.27.48.7,25,tcp,correct,1
+4503,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.165,66.111.4.71,25,tcp,correct,1
+4520,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,botnet,147.32.84.165,64.4.52.169,80,tcp,incorrect,0
+4523,42rw019ynzh0k9,Facundo Chaud,Label Botnet, prediction add-on,botnet,147.32.84.165,68.67.185.207,80,tcp,correct,1
+4588,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.165,207.126.147.10,25,tcp,correct,1
+4666,cs6ja4cjh7xskyb9,Luis,Label Normal, prediction add-on,botnet,147.32.84.191,217.163.21.39,80,tcp,incorrect,0
+4690,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.165,64.18.7.10,25,tcp,correct,1
+4725,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.192,173.192.170.88,80,tcp,incorrect,0
+4725,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,botnet,147.32.84.192,173.192.170.88,80,tcp,incorrect,0
+4767,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.165,207.115.37.23,25,tcp,correct,1
+4767,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.165,207.115.37.23,25,tcp,correct,1
+4781,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.192,74.125.93.27,25,tcp,correct,1
+4781,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.192,74.125.93.27,25,tcp,incorrect,0
+4781,2nz484f8jk7yzaor,Ricardo,Label Botnet, simple app,botnet,147.32.84.192,74.125.93.27,25,tcp,correct,1
+4781,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.192,74.125.93.27,25,tcp,correct,1
+4818,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.191,213.165.64.102,25,tcp,correct,1
+4818,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.191,213.165.64.102,25,tcp,correct,1
+4871,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.165,204.127.217.16,25,tcp,incorrect,0
+4916,42rw019ynzh0k9,Facundo Chaud,Label Botnet, prediction add-on,botnet,147.32.84.192,195.190.13.78,80,tcp,correct,1
+4921,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,botnet,147.32.84.191,69.5.6.201,25,tcp,incorrect,0
+4921,walg3rp0jrk3ayvi,Gabriel Peralta,Label Normal, reorder add-on,botnet,147.32.84.191,69.5.6.201,25,tcp,incorrect,0
+4999,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.191,207.126.154.10,25,tcp,correct,1
+5076,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.207,62.141.94.173,25,tcp,correct,1
+5076,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.207,62.141.94.173,25,tcp,incorrect,0
+5076,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.207,62.141.94.173,25,tcp,correct,1
+5080,susdtwau9cuqsemi,Pablo,Label Normal, full app,botnet,147.32.84.205,94.127.76.180,80,tcp,incorrect,0
+5105,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.206,205.188.156.193,25,tcp,correct,1
+5105,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.206,205.188.156.193,25,tcp,correct,1
+5166,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.208,94.63.150.63,80,tcp,correct,1
+5166,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,botnet,147.32.84.208,94.63.150.63,80,tcp,incorrect,0
+5202,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,botnet,147.32.84.206,74.6.140.64,25,tcp,incorrect,0
+5202,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.206,74.6.140.64,25,tcp,correct,1
+5274,cs6ja4cjh7xskyb9,Luis,Label Normal, prediction add-on,botnet,147.32.84.191,174.36.246.56,80,tcp,incorrect,0
+5284,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.206,77.238.177.9,25,tcp,correct,1
+5355,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.192,74.125.148.10,25,tcp,correct,1
+5355,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.192,74.125.148.10,25,tcp,correct,1
+5371,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.193,64.18.4.13,25,tcp,incorrect,0
+5372,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.192,98.138.84.55,587,tcp,correct,1
+5372,2nz484f8jk7yzaor,Ricardo,Label Botnet, simple app,botnet,147.32.84.192,98.138.84.55,587,tcp,correct,1
+5372,cs6ja4cjh7xskyb9,Luis,Label Normal, prediction add-on,botnet,147.32.84.192,98.138.84.55,587,tcp,incorrect,0
+5382,e94x4bggxpwuerk9,wikilen,Label Normal, full app,botnet,147.32.84.207,94.127.76.180,80,tcp,incorrect,0
+5403,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.192,216.69.186.201,25,tcp,correct,1
+5403,gk3o8w8fp1iqkt9,Francisco,Label Normal, prediction add-on,botnet,147.32.84.192,216.69.186.201,25,tcp,incorrect,0
+5407,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.206,195.113.232.83,80,tcp,correct,1
+5430,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.204,207.126.147.10,25,tcp,correct,1
+5441,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.207,98.126.71.122,80,tcp,correct,1
+5565,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.191,209.86.93.228,25,tcp,incorrect,0
+5589,2nz484f8jk7yzaor,Ricardo,Label Botnet, simple app,botnet,147.32.84.192,82.132.141.69,25,tcp,correct,1
+5589,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.192,82.132.141.69,25,tcp,correct,1
+5623,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.209,74.125.39.27,25,tcp,correct,1
+5623,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.209,74.125.39.27,25,tcp,correct,1
+5724,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.206,207.115.36.22,25,tcp,incorrect,0
+5724,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.206,207.115.36.22,25,tcp,correct,1
+5724,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.206,207.115.36.22,25,tcp,correct,1
+5731,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.193,216.32.181.178,25,tcp,correct,1
+5731,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.193,216.32.181.178,25,tcp,correct,1
+5741,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.206,195.190.13.70,80,tcp,correct,1
+5742,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.206,209.191.88.254,25,tcp,correct,1
+5748,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.206,64.18.7.10,25,tcp,correct,1
+5752,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,botnet,147.32.84.204,195.113.232.83,80,tcp,incorrect,0
+5784,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.204,65.55.92.152,25,tcp,correct,1
+5784,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.204,65.55.92.152,25,tcp,correct,1
+5857,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.207,98.139.175.224,25,tcp,correct,1
+5869,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.193,98.129.184.3,25,tcp,correct,1
+5869,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.193,98.129.184.3,25,tcp,correct,1
+5899,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.193,24.113.32.85,25,tcp,correct,1
+5954,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.208,65.55.88.22,25,tcp,correct,1
+5957,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.208,64.18.7.10,25,tcp,correct,1
+5957,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.208,64.18.7.10,25,tcp,correct,1
+5978,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.207,64.18.6.14,25,tcp,correct,1
+5978,walg3rp0jrk3ayvi,Gabriel Peralta,Label Botnet, reorder add-on,botnet,147.32.84.207,64.18.6.14,25,tcp,correct,1
+5978,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,botnet,147.32.84.207,64.18.6.14,25,tcp,incorrect,0
+5999,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.192,213.165.64.102,25,tcp,correct,1
+5999,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.192,213.165.64.102,25,tcp,correct,1
+6049,walg3rp0jrk3ayvi,Gabriel Peralta,Label Botnet, reorder add-on,botnet,147.32.84.204,208.43.37.100,25,tcp,correct,1
+6056,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.208,61.17.216.24,6667,tcp,correct,1
+6108,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.193,67.195.168.230,25,tcp,correct,1
+6108,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.193,67.195.168.230,25,tcp,incorrect,0
+6127,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.191,207.115.21.24,25,tcp,correct,1
+6127,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.191,207.115.21.24,25,tcp,correct,1
+6169,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.209,98.129.184.3,25,tcp,correct,1
+6169,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.209,98.129.184.3,25,tcp,correct,1
+6239,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.208,72.167.238.201,25,tcp,correct,1
+6239,42rw019ynzh0k9,Facundo Chaud,Label Botnet, prediction add-on,botnet,147.32.84.208,72.167.238.201,25,tcp,correct,1
+6239,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,botnet,147.32.84.208,72.167.238.201,25,tcp,incorrect,0
+6239,42rw019ynzh0k9,Facundo Chaud,Label Botnet, prediction add-on,botnet,147.32.84.208,72.167.238.201,25,tcp,correct,1
+6239,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,botnet,147.32.84.208,72.167.238.201,25,tcp,incorrect,0
+6239,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.208,72.167.238.201,25,tcp,correct,1
+6239,42rw019ynzh0k9,Facundo Chaud,Label Botnet, prediction add-on,botnet,147.32.84.208,72.167.238.201,25,tcp,correct,1
+6257,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,80.239.149.8,443,tcp,correct,1
+6295,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.204,208.65.144.12,25,tcp,correct,1
+6346,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.208,81.169.145.101,25,tcp,correct,1
+6348,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.206,216.32.181.178,25,tcp,correct,1
+6420,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.193,216.33.127.20,25,tcp,correct,1
+6420,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.193,216.33.127.20,25,tcp,correct,1
+6565,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.208,65.54.165.136,443,tcp,correct,1
+6673,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.209,82.216.111.1,25,tcp,correct,1
+6673,walg3rp0jrk3ayvi,Gabriel Peralta,Label Normal, reorder add-on,botnet,147.32.84.209,82.216.111.1,25,tcp,incorrect,0
+6734,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.191,208.65.145.12,25,tcp,correct,1
+6734,walg3rp0jrk3ayvi,Gabriel Peralta,Label Botnet, reorder add-on,botnet,147.32.84.191,208.65.145.12,25,tcp,correct,1
+6734,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.191,208.65.145.12,25,tcp,correct,1
+6751,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.207,213.75.3.30,25,tcp,correct,1
+6809,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.193,168.61.70.64,25,tcp,correct,1
+6907,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,botnet,147.32.84.193,66.94.236.34,25,tcp,incorrect,0
+6947,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.207,74.6.136.65,25,tcp,correct,1
+7033,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.206,205.188.159.42,25,tcp,correct,1
+7066,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,botnet,147.32.84.209,66.111.4.72,25,tcp,correct,1
+7068,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.204,66.94.237.64,25,tcp,correct,1
+7068,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.204,66.94.237.64,25,tcp,correct,1
+7095,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.207,98.137.54.238,25,tcp,correct,1
+7095,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.207,98.137.54.238,25,tcp,correct,1
+7137,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.206,64.18.4.10,25,tcp,correct,1
+7137,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.206,64.18.4.10,25,tcp,correct,1
+7236,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,botnet,147.32.84.205,65.55.237.71,443,tcp,incorrect,0
+7251,94tes32nwylow29,Sofia Bravi,Label Normal, reorder add-on,botnet,147.32.84.207,207.115.11.16,25,tcp,incorrect,0
+7314,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.205,65.55.37.120,25,tcp,correct,1
+7335,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.209,81.169.145.102,25,tcp,incorrect,0
+7335,2nz484f8jk7yzaor,Ricardo,Label Botnet, simple app,botnet,147.32.84.209,81.169.145.102,25,tcp,correct,1
+7348,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,botnet,147.32.84.209,65.54.165.139,443,tcp,incorrect,0
+7356,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.208,65.55.37.104,25,tcp,correct,1
+7356,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.208,65.55.37.104,25,tcp,correct,1
+7356,e94x4bggxpwuerk9,wikilen,Label Botnet, full app,botnet,147.32.84.208,65.55.37.104,25,tcp,correct,1
+7441,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.207,203.131.74.11,25,tcp,correct,1
+7456,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.193,217.197.114.150,25,tcp,correct,1
+7468,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,2.20.182.33,80,tcp,correct,1
+7516,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,botnet,147.32.84.165,80.12.242.9,25,tcp,correct,1
+7516,gk3o8w8fp1iqkt9,Francisco,Label Botnet, prediction add-on,botnet,147.32.84.165,80.12.242.9,25,tcp,correct,1
+7765,2nz484f8jk7yzaor,Ricardo,Label Botnet, simple app,botnet,147.32.84.204,68.1.17.9,25,tcp,correct,1
+7769,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.208,216.104.161.5,25,tcp,correct,1
+7788,walg3rp0jrk3ayvi,Gabriel Peralta,Label Normal, reorder add-on,botnet,147.32.84.209,212.82.111.207,25,tcp,incorrect,0
+7840,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.192,207.115.21.22,25,tcp,correct,1
+7840,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.192,207.115.21.22,25,tcp,incorrect,0
+7840,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.192,207.115.21.22,25,tcp,incorrect,0
+7863,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.193,74.6.136.65,25,tcp,correct,1
+7863,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.193,74.6.136.65,25,tcp,correct,1
+7866,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,209.85.148.99,80,tcp,correct,1
+7870,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,209.85.149.132,80,tcp,correct,1
+7883,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.208,74.6.136.65,25,tcp,correct,1
+7906,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.193,217.197.114.147,25,tcp,incorrect,0
+7906,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.193,217.197.114.147,25,tcp,correct,1
+7906,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.193,217.197.114.147,25,tcp,correct,1
+7922,walg3rp0jrk3ayvi,Gabriel Peralta,Label Normal, reorder add-on,botnet,147.32.84.207,65.55.37.104,25,tcp,incorrect,0
+7927,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.193,64.12.138.161,25,tcp,correct,1
+7954,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.205,66.94.236.34,25,tcp,correct,1
+7954,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.205,66.94.236.34,25,tcp,correct,1
+7954,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.205,66.94.236.34,25,tcp,correct,1
+7961,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.204,74.125.47.27,25,tcp,correct,1
+7961,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.204,74.125.47.27,25,tcp,correct,1
+7961,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.204,74.125.47.27,25,tcp,correct,1
+7972,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.192,213.165.64.75,25,tcp,correct,1
+7972,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.192,213.165.64.75,25,tcp,correct,1
+7972,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.192,213.165.64.75,25,tcp,correct,1
+7996,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.134,69.63.189.26,443,tcp,correct,1
+8100,susdtwau9cuqsemi,Pablo,Label Botnet, full app,botnet,147.32.84.204,65.54.188.94,25,tcp,correct,1
+8100,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.204,65.54.188.94,25,tcp,correct,1
+8100,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.204,65.54.188.94,25,tcp,correct,1
+8105,2nz484f8jk7yzaor,Ricardo,Label Botnet, simple app,botnet,147.32.84.204,64.12.90.98,25,tcp,correct,1
+8176,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.208,98.137.54.237,25,tcp,correct,1
+8176,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.208,98.137.54.237,25,tcp,correct,1
+8194,walg3rp0jrk3ayvi,Gabriel Peralta,Label Normal, reorder add-on,botnet,147.32.84.207,195.50.106.142,25,tcp,incorrect,0
+8206,xwfop0xaenqumcxr,Sebastian,Label Botnet, full app,botnet,147.32.84.208,207.115.80.6,25,tcp,correct,1
+8206,a5nyavqdwnpfd2t9,Franco Betetto,Label Botnet, full app,botnet,147.32.84.208,207.115.80.6,25,tcp,correct,1
+8289,rwt2uja6gaurf6r,Andres Bonilla,Label Botnet, reorder add-on,botnet,147.32.84.193,209.85.225.27,25,tcp,correct,1
+8327,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.192,64.12.138.161,25,tcp,incorrect,0
+8327,hor3c7v1uy096bt9,Martin,Label Botnet, simple app,botnet,147.32.84.192,64.12.138.161,25,tcp,correct,1
+8327,uz3vzelcb3uwhfr,Bianca Sozzi,Label Botnet, simple app,botnet,147.32.84.192,64.12.138.161,25,tcp,correct,1
+8327,hor3c7v1uy096bt9,Martin,Label Normal, simple app,botnet,147.32.84.192,64.12.138.161,25,tcp,incorrect,0
+8376,42rw019ynzh0k9,Facundo Chaud,Label Botnet, prediction add-on,normal,147.32.84.134,216.34.181.40,80,tcp,incorrect,0
+8402,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.134,66.220.158.32,443,tcp,correct,1
+8460,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.164,74.125.232.205,80,tcp,correct,1
+8460,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.164,74.125.232.205,80,tcp,correct,1
+8544,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.170,209.85.148.106,80,tcp,correct,1
+8558,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.170,209.85.148.99,443,tcp,correct,1
+8583,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.164,74.125.232.223,80,tcp,correct,1
+8585,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,74.125.232.200,80,tcp,correct,1
+8705,2nz484f8jk7yzaor,Ricardo,Label Normal, simple app,botnet,147.32.84.205,147.32.96.69,"NA",icmp,incorrect,0
+8718,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.164,63.245.209.92,443,tcp,correct,1
+8721,cs6ja4cjh7xskyb9,Luis,Label Normal, prediction add-on,normal,147.32.84.170,74.125.232.223,80,tcp,correct,1
+8749,94tes32nwylow29,Sofia Bravi,Label Botnet, reorder add-on,normal,147.32.84.170,88.86.101.2,80,tcp,incorrect,0
+8757,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.170,74.125.79.100,80,tcp,correct,1
+8764,42rw019ynzh0k9,Facundo Chaud,Label Normal, prediction add-on,normal,147.32.84.164,209.85.148.101,80,tcp,correct,1
+8770,xwfop0xaenqumcxr,Sebastian,Label Normal, full app,normal,147.32.84.164,80.239.149.9,80,tcp,correct,1
+8771,a5nyavqdwnpfd2t9,Franco Betetto,Label Normal, full app,normal,147.32.84.170,81.0.214.198,80,tcp,correct,1
+8771,e94x4bggxpwuerk9,wikilen,Label Normal, full app,normal,147.32.84.170,81.0.214.198,80,tcp,correct,1
+8773,walg3rp0jrk3ayvi,Gabriel Peralta,Label Normal, reorder add-on,normal,147.32.84.134,147.32.80.9,53,udp,correct,1
+8773,rwt2uja6gaurf6r,Andres Bonilla,Label Normal, reorder add-on,normal,147.32.84.134,147.32.80.9,53,udp,correct,1
+8797,cs6ja4cjh7xskyb9,Luis,Label Botnet, prediction add-on,normal,147.32.84.170,92.123.64.170,80,tcp,incorrect,0
+8797,cs6ja4cjh7xskyb9,Luis,Label Normal, prediction add-on,normal,147.32.84.170,92.123.64.170,80,tcp,correct,1
+8971,uz3vzelcb3uwhfr,Bianca Sozzi,Label Normal, simple app,normal,147.32.84.134,160.68.205.237,80,tcp,correct,1

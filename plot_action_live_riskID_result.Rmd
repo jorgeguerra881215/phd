@@ -1,0 +1,197 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+
+suppressMessages(library(plyr))
+suppressMessages(library(pastecs))
+suppressMessages(library(lavaan))
+suppressMessages(library(stringr))
+suppressMessages(library(ggplot2))
+suppressMessages(library(reshape2))
+suppressMessages(library(ggthemes))
+```
+
+```{r}
+setwd("/home/jorge/R/")
+root = getwd()
+dataDir <- paste(root, '/Data/', sep = '')
+resultsDir <- paste(root, '/Results/', sep = '')
+options(digits = 3)
+
+
+
+### Search paths per user
+style =   theme(
+  axis.title = element_text(size=20),
+  axis.text.x = element_text(size=18),
+  axis.text.y = element_blank(),# element_text(size=12),
+  legend.position = 'top',
+  legend.title=element_text(size=20),
+  legend.text=element_text(size=20),
+  strip.text.y = element_text(size = 20, angle = 0)
+)
+
+#### Search paths 2 levels 
+options(stringsAsFactors=F)
+#df.log.sm = data.frame(read.csv(paste(dataDir, 'urank-logs.csv', sep = '')))
+
+
+df.log.sm = data.frame(read.csv(paste(dataDir, 'urank-logs.csv', sep = '')))
+
+##### convert strings to timestamsps
+df.log.sm$timeposix<-as.POSIXct(df.log.sm$timestamp, format="%Y-%m-%d %H:%M:%S")
+##### create a duration field for each entry
+df.log.sm$timeduration<-0
+##### use differenece in timestams as duration (in seconds, divide by 60 to get duration in minutes)
+df.log.sm[df.log.sm$user=='MJ',]$timeduration<-difftime(df.log.sm[df.log.sm$user=='MJ',]$timeposix, df.log.sm[df.log.sm$user=='MJ',]$timeposix[1]) 
+df.log.sm[df.log.sm$user=='H',]$timeduration<-difftime(df.log.sm[df.log.sm$user=='H',]$timeposix, df.log.sm[df.log.sm$user=='H',]$timeposix[1]) 
+
+#### add the action categories
+#### first we name everything filter
+df.log.sm$action_category<-3
+#### now we add the action categories 1=label, 2=detail, 3=filter
+df.log.sm[df.log.sm$action=="Label Normal",]$action_category<-1
+df.log.sm[df.log.sm$action=="Label Botnet",]$action_category<-1
+#### now we add selection actions
+df.log.sm[df.log.sm$action=="Connection",]$action_category<-2
+df.log.sm[df.log.sm$action=="Close Connection",]$action_category<-2
+df.log.sm[df.log.sm$action=="Sequence Connection",]$action_category<-2
+
+# other actions
+df.log.sm[df.log.sm$action=="Save Labeling",]$action_category<-3
+
+
+df.log.sm$action_category = factor(df.log.sm$action_category, levels = c(1,2,3), labels=c('label', 'details', 'filter'))
+df.log.sm$action = factor(df.log.sm$action, levels = c('Label Normal', 'Label botnet', 'Connection', 'Close Connection', 'Sequence Connection','Save Labeling','Filter all','Filter IP_1','Filter Port','Filter nonlabel','Filter IP_0','Filter botnet'))
+df.log.sm$user.num = df.log.sm$user
+levels(df.log.sm$user.num) = c(1:length(unique(df.log.sm$user.num)))
+df.log.sm<-df.log.sm[order(df.log.sm$timeduration),]
+df.log.sm$user.num<-as.factor(df.log.sm$user.num)
+df.log.sm$pos<-sequence(tabulate(df.log.sm$user.num))
+
+#df.log.sm$pos<-df.log.sm$pos *3
+
+pdf(paste(resultsDir, 'workflow_log1_time_(3_levels).pdf', sep = ''), width = 20, height = 6)
+ggplot(df.log.sm, aes(x=timeduration, y=action_category, group=user.num)) +
+  scale_x_continuous('#Action') + ylab('Action Type') +
+  geom_line(colour='#333333') +
+  geom_point(aes(shape=action_category, fill=action_category), size=2) +
+  scale_fill_manual(values = c('blue', 'green', 'orange')) + 
+  scale_shape_manual(values = c(21,21,21)) +
+  labs(fill = 'Action Type', shape = 'Action Type') +
+  facet_grid(user.num~.,scales = 'free') +
+  theme_bw() + style
+dev.off()
+
+pdf(paste(resultsDir, 'workflow_log1_pos_(3_levels).pdf', sep = ''), width = 20, height = 6)
+ggplot(df.log.sm, aes(x=pos, y=action_category, group=user.num)) +
+  scale_x_continuous('#Action') + ylab('Action Type') +
+  geom_line(colour='#333333') +
+  geom_point(aes(shape=action_category, fill=action_category), size=2) +
+  scale_fill_manual(values = c('blue', 'green', 'orange')) + 
+  scale_shape_manual(values = c(21,21,21)) +
+  labs(fill = 'Action Type', shape = 'Action Type') +
+  facet_grid(user.num~.,scales = 'free') +
+  theme_bw() + style
+dev.off()
+```
+
+```{r}
+#### dataset 2 usar este
+#df.log.sm = data.frame(read.csv(paste(dataDir, 'urank_logs_2_result.csv', sep = '')))
+df.log.sm = data.frame(read.csv(paste(dataDir, 'urank_logs_3_result.csv', sep = '')))
+
+##### convert strings to timestamsps
+df.log.sm$timeposix<-as.POSIXct(df.log.sm$timestamp, format="%Y/%m/%d_%H.%M.%S")
+##### create a duration field for each entry
+df.log.sm$timeduration<-0
+##### use differenece in timestams as duration (in seconds, divide by 60 to get duration in minutes)
+#df.log.sm[df.log.sm$user=='2',]$timeduration<-difftime(df.log.sm[df.log.sm$user=='2',]$timeposix, #df.log.sm[df.log.sm$user=='2',]$timeposix[1]) 
+#df.log.sm[df.log.sm$user=='1',]$timeduration<-difftime(df.log.sm[df.log.sm$user=='1',]$timeposix, #df.log.sm[df.log.sm$user=='1',]$timeposix[1]) 
+
+df.log.sm[df.log.sm$user_name == 'Gabriel Peralta',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Gabriel Peralta',]$timeposix, df.log.sm[df.log.sm$user_name == 'Gabriel Peralta',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Fabricio',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Fabricio',]$timeposix, df.log.sm[df.log.sm$user_name == 'Fabricio',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Pablo',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Pablo',]$timeposix, df.log.sm[df.log.sm$user_name == 'Pablo',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'wikilen',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='wikilen',]$timeposix, df.log.sm[df.log.sm$user_name == 'wikilen',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Ricardo',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Ricardo',]$timeposix, df.log.sm[df.log.sm$user_name == 'Ricardo',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Andres Bonilla',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Andres Bonilla',]$timeposix, df.log.sm[df.log.sm$user_name == 'Andres Bonilla',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'jorge',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='jorge',]$timeposix, df.log.sm[df.log.sm$user_name == 'jorge',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Francisco',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Francisco',]$timeposix, df.log.sm[df.log.sm$user_name == 'Francisco',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Sofia Bravi',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Sofia Bravi',]$timeposix, df.log.sm[df.log.sm$user_name == 'Sofia Bravi',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Luis',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Luis',]$timeposix, df.log.sm[df.log.sm$user_name == 'Luis',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Mercedes Muñoz',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Mercedes Muñoz',]$timeposix, df.log.sm[df.log.sm$user_name == 'Mercedes Muñoz',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Martin',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Martin',]$timeposix, df.log.sm[df.log.sm$user_name == 'Martin',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Franco Betetto',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Franco Betetto',]$timeposix, df.log.sm[df.log.sm$user_name == 'Franco Betetto',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Facundo Chaud',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Facundo Chaud',]$timeposix, df.log.sm[df.log.sm$user_name == 'Facundo Chaud',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Bianca Sozzi',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Bianca Sozzi',]$timeposix, df.log.sm[df.log.sm$user_name == 'Bianca Sozzi',]$timeposix[1])
+df.log.sm[df.log.sm$user_name == 'Sebastian',]$timeduration<-difftime(df.log.sm[df.log.sm$user_name=='Sebastian',]$timeposix, df.log.sm[df.log.sm$user_name == 'Sebastian',]$timeposix[1])
+
+
+#### add the action categories
+#### first we name everything filter
+df.log.sm$action_category<-3
+#### now we add the action categories 1=label, 2=detail, 3=filter
+df.log.sm[df.log.sm$action=="Label Normal",]$action_category<-1
+df.log.sm[df.log.sm$action=="Label Botnet",]$action_category<-1
+#### now we add selection actions
+df.log.sm[df.log.sm$action=="Connection",]$action_category<-2
+df.log.sm[df.log.sm$action=="Close Connection",]$action_category<-2
+df.log.sm[df.log.sm$action=="Sequence Connection",]$action_category<-2
+
+# other actions
+df.log.sm[df.log.sm$action=="Save Labeling",]$action_category<-3
+
+df.log.sm$action_category = factor(df.log.sm$action_category, levels = c(1,2,3), labels=c('label', 'details', 'filter'))
+
+df.log.sm$action_cat2 <-'filter' # everything is filter
+df.log.sm[df.log.sm$action=="Label Normal",]$action_cat2<-'label normal'  # normal 
+df.log.sm[df.log.sm$action=="Label Botnet",]$action_cat2<-'label bot'  # bot
+df.log.sm[df.log.sm$action=="Connection",]$action_cat2<-'details'  # select means get details
+df.log.sm[df.log.sm$action=="Close Connection",]$action_cat2<-'details'  # select means get details
+df.log.sm[df.log.sm$action=="Sequence Connection",]$action_cat2<-'drill down' # see the sequence of letters is drill down.
+df.log.sm$action_cat2<-factor(df.log.sm$action_cat2)
+
+df.log.sm$action = factor(df.log.sm$action)#, levels = c('Label Normal', 'Label botnet', 'Connection', 'Close Connection', 'Sequence Connection','Save Labeling','Filter'))
+df.log.sm$user.num = df.log.sm$user
+levels(df.log.sm$user.num) = c(1:length(unique(df.log.sm$user.num)))
+df.log.sm<-df.log.sm[order(df.log.sm$timeduration),]
+df.log.sm$user.num<-as.factor(df.log.sm$user.num)
+df.log.sm$pos<-sequence(tabulate(df.log.sm$user.num))
+
+#df.log.sm$pos<-df.log.sm$pos *3
+
+pdf(paste(resultsDir, 'workflow_log2_time_(3_levels).pdf', sep = ''), width = 20, height = 15)
+ggplot(df.log.sm, aes(x=timeduration, y=action_category, group=user.num)) +
+  scale_x_continuous('#Action') + ylab('Action Type') +
+  geom_line(colour='#333333') +
+  geom_point(aes(shape=action_cat2, fill=action_cat2), size=2) +
+  scale_fill_manual(values = c('red','blue','orange', 'green','dark green')) + 
+  scale_shape_manual(values = c(21,21,21,21,21)) +
+  labs(fill = 'Action Type', shape = 'Action Type') +
+  facet_grid(user.num~.,scales = 'free') +
+  theme_bw() + style
+dev.off()
+
+pdf(paste(resultsDir, 'workflow_log2_pos_(2_levels).pdf', sep = ''), width = 20, height = 15)
+ggplot(df.log.sm, aes(x=pos, y=action_category, group=user.num)) +
+  scale_x_continuous('#Action') + ylab('Action Type') +
+  geom_line(colour='#333333') +
+  geom_point(aes(shape=action_cat2, fill=action_cat2), size=2) +
+  scale_fill_manual(values = c('olivedrab1','seagreen3', 'orange','turquoise2','sienna1')) +
+  scale_shape_manual(values = c(21,21,21,21,21)) +
+  labs(fill = 'Action Type', shape = 'Action Type') +
+  facet_grid(user.num~.,scales = 'free') +
+  theme_bw() + style
+dev.off()
+
+df.log.e1<-df.log.sm[df.log.sm$user=='1',]
+df.log.e1<-df.log.e1[df.log.e1$action_category=="label",]
+df.log.e1$data
+
+df.log.e2<-df.log.sm[df.log.sm$user=='2',]
+df.log.e2<-df.log.e2[df.log.e2$action_category=="label",]
+df.log.e2$data
+```

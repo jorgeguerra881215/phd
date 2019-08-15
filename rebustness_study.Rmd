@@ -1,0 +1,58 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#Library
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(stringr))
+#suppressMessages(library(ISLR))
+suppressMessages(library(caret))
+suppressMessages(library(doMC))
+#suppressMessages(library(plotly))
+registerDoMC(cores=4)
+```
+
+#Robustness Analisys(30 iterations)
+```{r}
+set.seed(331)
+partitions <- seq(2,90,2)
+
+total <- nrow(training)
+result_rf_accuracy <- data.frame('count_of_data' = partitions)
+result_ela_measure <- data.frame('count_of_data' = partitions)
+write.table(result_rf_accuracy,file="test_result_rf_accuracy.txt",sep="|", row.names = F)
+write.table(result_ela_measure,file="test_result_ela_measure.txt",sep="|", row.names = F)
+for (j in c(1:30)){
+  rf_measures_result <- c()
+  ela_measures_result <- c()
+  #Calculando RF performance con variaciones en el porciento de ruido en training
+  for(i in partitions){
+    porcent <- (i*total) / 100
+    training_noisy <- generate_data_noisy(noisy_data,porcent)
+    balanced_accuracy_aux <- randomForest_performace(training_noisy,testing)
+    rf_measures_result[i] <- balanced_accuracy_aux
+  }
+  #Calculando ELA measure
+  for(i in partitions){
+    balanced_accuracy_noisy <- rf_measures_result[i]
+    ela_measures_result[i] <- get_ELA_measure(A0 = balanced_accuracy['Balanced Accuracy'], Ax = balanced_accuracy_noisy)
+  }
+  
+  #Quedandome con las posiciones pares que son las que tienen los valores
+  ela_measures_result <- ela_measures_result[partitions]
+  rf_measures_result <- rf_measures_result[partitions]
+  
+  colum_name <- paste('iteration_',toString(j),sep = "")
+  result_rf_accuracy <- cbind(result_rf_accuracy, colum_name = rf_measures_result)
+  result_ela_measure <- cbind(result_ela_measure, colum_name = ela_measures_result)
+  
+  write.table(result_rf_accuracy,file="test_result_rf_accuracy.txt",sep="|", row.names = F)
+  write.table(result_ela_measure,file="test_result_ela_measure.txt",sep="|", row.names = F)
+}
+
+result_ela_measure
+result_rf_accuracy
+
+```

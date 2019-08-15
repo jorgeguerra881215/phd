@@ -1,0 +1,530 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#Libraries
+```{r}
+#Dimension de las imagenes: w: 879 y h: 305
+#Dimension de las imagenes en fila: w:340 y h:320
+suppressMessages(library(tidyverse))
+suppressMessages(library(ggplot2))
+suppressMessages(library(dplyr))
+```
+
+#Learning Rate Analisys (Simple RF)
+```{r}
+feature_vectors_cleaned <- read.csv('./datasets/balanced_feature_vector_cleaned.txt', stringsAsFactors = F, sep = '|')
+
+rf_data <- read.csv('./datasets/random_forest_30_iterations_f1_testing2.txt',sep = '|', stringsAsFactors = F)
+rf_data <- rf_data %>% filter(count_of_data < 9000)
+data_means <- rowMeans(rf_data[,c(-1)])
+#data_means
+result_data_2 <- rf_data[,-1]
+data_sd <- transform(result_data_2, SD=apply(result_data_2,1, sd, na.rm = TRUE))
+#data_sd[,'SD']
+
+size_features_vector <- nrow(feature_vectors_cleaned)
+step_size <- 200
+split_size_training = size_features_vector / step_size
+values<-c()
+#vector_sampled
+for (i in 1:44){
+    values[i] = i*step_size
+}
+values
+aux_data <- cbind(ds=data_sd[,'SD'],m=data_means)
+aux_data
+data<-as.data.frame(cbind(x=values,cluster=aux_data))
+data[,'m'] - (data[,'ds'] / 2)
+names(data) <- c("x","ds","m")
+data
+pd <- position_dodge(0.5)
+learning_rate_plot <- ggplot(data, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+learning_rate_plot
+```
+
+
+#Learning Rate Analisys (Uncertaining Sampled result)
+```{r}
+rf_data_uncertain <- read.csv('./datasets/balanced_random_forest_30_iterations_f1_testing_uncertaining_sampled.txt',sep = '|', stringsAsFactors = F)
+rf_data_uncertain <- rf_data_uncertain %>% filter(count_of_data < 9000)
+#data_means <- rowMeans(rf_data_uncertain[,c(-1)])
+#data_means
+#result_data_2 <- rf_data_uncertain[,-1]
+data_sd_uncertaining <- transform(rf_data_uncertain[,-1], SD=apply(rf_data_uncertain[,-1],1, sd, na.rm = TRUE))
+#data_sd[,'SD']
+
+#aux_data <- cbind(ds=data_sd_uncertaining[,'SD'],m=rowMeans(rf_data_uncertain[,c(-1)]))
+#aux_data
+data_uncertain <- as.data.frame(cbind(x=values, cluster = cbind(ds=data_sd_uncertaining[,'SD'], m = rowMeans(rf_data_uncertain[,c(-1)]))))
+data_uncertain[,'m'] - (data_uncertain[,'ds'] / 2)
+names(data_uncertain) <- c("x","ds","m")
+
+pd <- position_dodge(0.5)
+learning_rate_plot_uncertain <- ggplot(data_uncertain, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+learning_rate_plot_uncertain
+```
+
+#Logistic Regresion Analisys (Uncertaining Sampled result)
+```{r}
+lr_data_uncertain <- read.csv('./datasets/balanced_logistic_regression_30_iterations_f1_testing.txt',sep = '|', stringsAsFactors = F)
+lr_data_uncertain <- lr_data_uncertain %>% filter(count_of_data < 9000)
+#data_means <- rowMeans(rf_data_uncertain[,c(-1)])
+#data_means
+#result_data_2 <- rf_data_uncertain[,-1]
+data_sd_uncertaining <- transform(lr_data_uncertain[,-1], SD=apply(lr_data_uncertain[,-1],1, sd, na.rm = TRUE))
+#data_sd[,'SD']
+
+#aux_data <- cbind(ds=data_sd_uncertaining[,'SD'],m=rowMeans(rf_data_uncertain[,c(-1)]))
+#aux_data
+data_uncertain_lr <- as.data.frame(cbind(x=values, cluster = cbind(ds=data_sd_uncertaining[,'SD'], m = rowMeans(lr_data_uncertain[,c(-1)]))))
+data_uncertain_lr[,'m'] - (data_uncertain_lr[,'ds'] / 2)
+names(data_uncertain_lr) <- c("x","ds","m")
+
+pd <- position_dodge(0.5)
+learning_rate_plot_uncertain <- ggplot(data_uncertain_lr, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+learning_rate_plot_uncertain
+```
+
+#Logistic Regresion Analisys (Random selection result)
+```{r}
+lr_data <- read.csv('./datasets/logistic_regression_30_iterations_f1_testing.txt',sep = '|', stringsAsFactors = F)
+lr_data <- lr_data %>% filter(count_of_data < 9000)
+#data_means <- rowMeans(rf_data_uncertain[,c(-1)])
+#data_means
+#result_data_2 <- rf_data_uncertain[,-1]
+data_sd <- transform(lr_data[,-1], SD=apply(lr_data[,-1],1, sd, na.rm = TRUE))
+#data_sd[,'SD']
+
+#aux_data <- cbind(ds=data_sd_uncertaining[,'SD'],m=rowMeans(rf_data_uncertain[,c(-1)]))
+#aux_data
+data_lr <- as.data.frame(cbind(x=values, cluster = cbind(ds=data_sd[,'SD'], m = rowMeans(lr_data[,c(-1)]))))
+data_lr[,'m'] - (data_lr[,'ds'] / 2)
+names(data_lr) <- c("x","ds","m")
+
+pd <- position_dodge(0.5)
+learning_rate_plot_uncertain <- ggplot(data_lr, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+learning_rate_plot_uncertain
+```
+```{r}
+partial_data_1 <- read.csv('./datasets/ilab_10_iterations_f1_testing_1.txt', sep = '|', stringsAsFactors = F)
+partial_data_2 <- read.csv('./datasets/ilab_10_iterations_f1_testing_2.txt', sep = '|', stringsAsFactors = F)
+partial_data_3 <- read.csv('./datasets/ilab_10_iterations_f1_testing_3.txt', sep = '|', stringsAsFactors = F)
+vector_names <- c('count_of_data', 'iteration_15', 'iteration_16', 'iteration_17', 'iteration_41', 'iteration_51', 'iteration_61', 'iteration_71', 'iteration_81', 'iteration_91', 'iteration_101')
+
+names(partial_data_3) <- vector_names
+partial_data_aux <- cbind(partial_data_1,partial_data_2[,-1])
+
+partial_data_aux <- cbind(partial_data_aux,partial_data_3[,-1])
+
+x <- c('count_of_data')
+for(i in c(1:30)){
+  x[i+1] <- paste('iteration_',toString(i),sep = "")
+}
+x
+names(partial_data_aux) <- x
+partial_data_aux
+```
+
+#ILAB
+```{r}
+ilab_data <- partial_data_aux#read.csv('./datasets/balanced_ilab_30_iterations_f1_testing.txt',sep = '|', stringsAsFactors = F)
+ilab_data <- ilab_data %>% filter(count_of_data < 9000)
+#data_means <- rowMeans(rf_data_uncertain[,c(-1)])
+#data_means
+#result_data_2 <- rf_data_uncertain[,-1]
+ilab_data_sd <- transform(ilab_data[,-1], SD=apply(ilab_data[,-1],1, sd, na.rm = TRUE))
+#data_sd[,'SD']
+
+#aux_data <- cbind(ds=data_sd_uncertaining[,'SD'],m=rowMeans(rf_data_uncertain[,c(-1)]))
+#aux_data
+ilab_data_lr <- as.data.frame(cbind(x=values, cluster = cbind(ds=ilab_data_sd[,'SD'], m = rowMeans(ilab_data[,c(-1)]))))
+ilab_data_lr[,'m'] - (ilab_data_lr[,'ds'] / 2)
+names(ilab_data_lr) <- c("x","ds","m")
+
+pd <- position_dodge(0.5)
+ilab_plot <- ggplot(ilab_data_lr, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+ilab_plot
+```
+
+#ILAB using RF
+```{r}
+ilab_rf_data <- read.csv('./datasets/balanced_rf_ilab_30_iterations_f1_testing.txt',sep = '|', stringsAsFactors = F)
+ilab_rf_data <- ilab_rf_data %>% filter(count_of_data < 9000)
+ilab_rf_data_sd <- transform(ilab_rf_data[,-1], SD=apply(ilab_rf_data[,-1],1, sd, na.rm = TRUE))
+
+values<-c()
+step_size <- 200
+for (i in 1:44){
+    values[i] = i*step_size
+}
+
+ilab_rf_data_lr <- as.data.frame(cbind(x=values, cluster = cbind(ds=ilab_rf_data_sd[,'SD'], m = rowMeans(ilab_rf_data[,c(-1)]))))
+ilab_rf_data_lr[,'m'] - (ilab_rf_data_lr[,'ds'] / 2)
+names(ilab_rf_data_lr) <- c("x","ds","m")
+
+pd <- position_dodge(0.5)
+ilab_rf_plot <- ggplot(ilab_rf_data_lr, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+ilab_rf_plot
+```
+
+
+#################### Robustness Analysis ###############################
+#Robusness Analysis in RF using new balanced dataset 
+```{r}
+#noisy_rf_accuracy <- read.csv('./datasets/balanced_test_result_rf_accuracy.txt', stringsAsFactors = F, sep = '|')
+noisy_rf_ela_1 <- read.csv('/home/jguerra/datasets/stratosphere/balanced_test_result_ela_measure.txt', stringsAsFactors = F, sep = '|')
+noisy_rf_ela_2 <- read.csv('/home/jguerra/datasets/stratosphere/balanced_test_result_ela_measure_2.txt', stringsAsFactors = F, sep = '|')
+noisy_rf_ela_3 <- read.csv('/home/jguerra/datasets/stratosphere/balanced_test_result_ela_measure_3.txt', stringsAsFactors = F, sep = '|')
+
+merge_data <- cbind(noisy_rf_ela_1, noisy_rf_ela_2[,-1])
+merge_data <- cbind(merge_data, noisy_rf_ela_3[,-1])
+ncol(merge_data)
+merge_data <- merge_data[,-2]
+
+name = c(c('porcent_of_data') ,paste('it',c(1:30), sep = '_'))
+#names(noisy_rf_accuracy) <- name
+names(merge_data) <- name
+
+#noisy_rf_accuracy
+noisy_rf_ela <- merge_data
+```
+
+#Plotting Robusness Analysis in RF using CTU-19
+```{r}
+data_means <- rowMeans(noisy_rf_ela[,c(-1)])
+#data_means
+cs_pred_2 <- noisy_rf_ela[,-1]
+data_sd <- transform(cs_pred_2, SD=apply(cs_pred_2,1, sd, na.rm = TRUE))
+#data_sd[,'SD']
+
+aux_data <- cbind(ds=data_sd[,'SD'],m=data_means)
+#aux_data
+data_rf_ctu19<-as.data.frame(cbind(x=noisy_rf_ela[,1],cluster=aux_data))
+data_rf_ctu19[,'m'] - (data_rf_ctu19[,'ds'] / 2)
+names(data_rf_ctu19) <- c("x","ds","m")
+#data
+pd <- position_dodge(0.5)
+robustness_plot <- ggplot(data_rf_ctu19, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "Noise Level [%]",
+       y="ELA Measure", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+robustness_plot
+```
+
+#Robusness Analysis in ILAB new balanced dataset 
+```{r}
+noisy_ilab_accuracy <- read.csv('/home/jguerra/datasets/stratosphere/balanced_ilab_test_result_rf_accuracy.txt', stringsAsFactors = F, sep = '|')
+noisy_ilab_ela <- read.csv('/home/jguerra/datasets/stratosphere/balanced_ilab_test_result_ela_measure.txt', stringsAsFactors = F, sep = '|')
+
+name = c(c('porcent_of_data') ,paste('it',c(1:30), sep = '_'))
+names(noisy_ilab_accuracy) <- name
+names(noisy_ilab_ela) <- name
+
+#noisy_ilab_accuracy
+#noisy_ilab_ela
+```
+
+#Plotting Robusness Analysis in ILAB
+```{r}
+data_means <- rowMeans(noisy_ilab_ela[,c(-1)])
+#data_means
+cs_pred_2 <- noisy_ilab_ela[,-1]
+data_sd <- transform(cs_pred_2, SD=apply(cs_pred_2,1, sd, na.rm = TRUE))
+#data_sd[,'SD']
+
+aux_data <- cbind(ds=data_sd[,'SD'],m=data_means)
+#aux_data
+data_ilab_ctu19<-as.data.frame(cbind(x=noisy_ilab_ela[,1],cluster=aux_data))
+data_ilab_ctu19[,'m'] - (data_ilab_ctu19[,'ds'] / 2)
+names(data_ilab_ctu19) <- c("x","ds","m")
+#data
+pd <- position_dodge(0.5)
+robustness_plot <- ggplot(data_ilab_ctu19, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "Noise Level [%]",
+       y="ELA Measure", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+robustness_plot
+```
+
+#Combining Graph
+```{r}
+plot_result <- combining_graph(data_rf_ctu19,data_ilab_ctu19, text_group1 = 'RF', text_group2 = 'ILAB', caption = 'CTU-19', x_text = 'Noise Level [%]', y_text = 'ELA Measure')
+plot_result
+```
+
+#Robusness Analysis in ILAB CTU-13 dataset
+```{r}
+noisy_ilab_accuracy <- read.csv('/home/jguerra/datasets/stratosphere/ctu13_ilab_test_result_rf_accuracy.txt', stringsAsFactors = F, sep = '|')
+noisy_ilab_ela <- read.csv('/home/jguerra/datasets/stratosphere/ctu13_ilab_test_result_ela_measure.txt', stringsAsFactors = F, sep = '|')
+
+name = c(c('porcent_of_data') ,paste('it',c(1:30), sep = '_'))
+names(noisy_ilab_accuracy) <- name
+names(noisy_ilab_ela) <- name
+
+head(noisy_ilab_accuracy)
+head(noisy_ilab_ela)
+```
+
+#Plotting Robusness Analysis in ILAB
+```{r}
+data_means <- rowMeans(noisy_ilab_ela[,c(-1)])
+#data_means
+cs_pred_2 <- noisy_ilab_ela[,-1]
+data_sd <- transform(cs_pred_2, SD=apply(cs_pred_2,1, sd, na.rm = TRUE))
+#data_sd[,'SD']
+
+aux_data <- cbind(ds=data_sd[,'SD'],m=data_means)
+#aux_data
+data<-as.data.frame(cbind(x=noisy_ilab_ela[,1],cluster=aux_data))
+data[,'m'] - (data[,'ds'] / 2)
+names(data) <- c("x","ds","m")
+#data
+pd <- position_dodge(0.5)
+robustness_plot <- ggplot(data, aes(x=x,y=m))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line(color='red') + 
+  geom_point(color = 'red') +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "Noise Level [%]",
+       y="ELA Measure", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+robustness_plot
+```
+
+#Useful Function
+```{r}
+build_data <- function(dir){
+  data <- read.csv(dir,sep = '|', stringsAsFactors = F) %>% filter(count_of_data < 9000)
+  data_sd <- transform(data[,-1], SD=apply(data[,-1],1, sd, na.rm = TRUE))
+  data <- as.data.frame(cbind(x=values, cluster = cbind(ds=data_sd[,'SD'], m = rowMeans(data[,c(-1)]))))
+  data[,'m'] - (data[,'ds'] / 2)
+  names(data) <- c("x","ds","m")
+  return(data)
+}
+
+combining_graph <- function(data1,data2, text_group1, text_group2,  caption, x_text, y_text){
+  visual1 <- data1
+  visual2 <- data2
+  
+  visual1$group <- text_group1
+  visual2$group <- text_group2
+  visual1$group <- as.factor(visual1$group)
+  visual2$group <- as.factor(visual2$group)
+  
+  visual12 <- rbind(visual1, visual2)
+  visual12$group <- as.factor(visual12$group)
+  
+  plot_result <- ggplot(visual12, aes(x=x,y=m,  group=group, col=group, fill=group))+
+    #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+    geom_line() + 
+    geom_point() +
+    geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+    #geom_boxplot()+
+    labs(
+         #title="Random Forest performance with incremental training data", 
+         #subtitle="Drawn from Long Data format", 
+         caption=caption, 
+         x = x_text,
+         y = y_text, 
+         color=NULL) +
+    theme_bw() +
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14))
+  return(plot_result)
+}
+```
+
+### Combining graphs of Learning Rate result in Random Forest and Learning Rate result in Uncertaining Sampled
+```{r}
+visual1 <- data
+#c_2 <- nrow(data_uncertain)
+visual2 <- data_uncertain  #[-c(c_2, c_2 - 1, c_2 - 2, c_2 - 3, c_2 - 4, c_2 - 5),]
+visual3 <- data_uncertain_lr
+visual4 <- data_lr
+visual5 <- ilab_data_lr
+visual6 <- ilab_rf_data_lr
+
+visual1$group <- 'RF using Random selection'
+visual2$group <- 'RF using Uncertaining seleccion'
+visual3$group <- 'LR using Uncertaining seleccion'
+visual4$group <- 'LR using Random selection'
+visual5$group <- 'ILAB'
+visual6$group <- 'ILAB using RF'
+
+visual1$group <- as.factor(visual1$group)
+visual2$group <- as.factor(visual2$group)
+visual3$group <- as.factor(visual3$group)
+visual4$group <- as.factor(visual4$group)
+visual5$group <- as.factor(visual5$group)
+visual6$group <- as.factor(visual6$group)
+
+
+visual12 <- rbind(visual1, visual2)
+visual123 <- rbind(visual12, visual3)
+visual1234 <- rbind(visual123, visual4)
+visual12345 <- rbind(visual1234, visual5)
+visual12345$group <- as.factor(visual12345$group)
+
+
+
+visual_aux12 <- rbind(visual1, visual2)
+visual_aux125 <- rbind(visual_aux12, visual5)
+visual_aux125$group <- as.factor(visual_aux125$group)
+
+#do.call(rbind, Map(data.frame, data_count=count_random, metric=metric)) %>%
+
+ggplot(rbind(visual2, visual6), aes(x=x,y=m,  group=group, col=group, fill=group))+
+  #geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  geom_line() + 
+  geom_point() +
+  geom_errorbar(aes(ymin=m-(ds/2), ymax=m+(ds/2)), colour="black", width=0.2) +
+  #geom_boxplot()+
+  labs(
+       #title="Random Forest performance with incremental training data", 
+       #subtitle="Drawn from Long Data format", 
+       caption="Source: CTU-13", 
+       x = "training-set size",
+       y="F1 Score", 
+       color=NULL) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+
+```
+
+```{r}
+ilab_data$type= 'ilab'
+
+rf_data_uncertain$type = 'RF'
+
+
+
+rbind(ilab_data, rf_data_uncertain) %>% 
+  reshape2::melt(id = c('count_of_data','type')) %>%
+  ggplot()+
+  geom_boxplot(aes(x = as.factor(count_of_data), y = value)) + 
+  geom_point(aes(x = as.factor(count_of_data), y = value), color= 'red', alpha=0.2) + 
+  facet_wrap(~type)
+#ggplot(ilab_data,)
+```

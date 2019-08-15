@@ -7,11 +7,11 @@ output: html_notebook
 ```{r}
 suppressMessages(library(tidyverse))
 suppressMessages(library(stringr))
-suppressMessages(library(ISLR))
+#suppressMessages(library(ISLR))
 suppressMessages(library(caret))
 suppressMessages(library(doMC))
-suppressMessages(library(plotly))
-suppressMessages(library(stringr))
+#suppressMessages(library(plotly))
+#suppressMessages(library(stringr))
 registerDoMC(cores=4)
 ```
 
@@ -76,6 +76,7 @@ aux1 %>% group_by(class) %>% summarise(n=n()) %>% arrange(desc(n))
 aux <- rbind(feature_vectors_cleaned_aux_rest,aux1)
 aux %>% group_by(class) %>% summarise(n=n()) %>% arrange(desc(n))
 feature_vectors_cleaned <- aux
+#write.table(feature_vectors_cleaned,'/home/jguerra/datasets/stratosphere/ctu_13_feature_vector_cleaned.txt',sep = '|', row.names = FALSE)
 ```
 
 ### Create training set and testset
